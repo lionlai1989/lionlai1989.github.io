@@ -8,14 +8,6 @@ toc: true
 wip: false
 ---
 
-<div style="text-align: center; margin-bottom: 10px">
-    <img src="/assets/images/2022-06-15/header_normalize.png"
-      alt="Gradient"
-      style="margin: auto; width: 100%; max-width: 800px; margin-bottom: 20px">
-    <br>
-    <i>Figure: Satellite image after normalization by windows.</i>
-</div>
-
 ## Introduction
 
 In the fascinating world of 3D computer vision, we often find ourselves dealing with 3D
