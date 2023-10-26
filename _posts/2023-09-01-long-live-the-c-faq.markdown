@@ -1,7 +1,7 @@
 ---
 layout: single
 classes: wide
-title: C Notes
+title: "Long Live the C: Frequently Asked Questions"
 description: "."
 toc: true
 wip: true
