@@ -150,7 +150,7 @@ CPU time used of column-major order: 2.357 seconds
 ```
 
 Notably, the computed sum remains the same in both cases, but the time taken differs
-significantly. The row-wise traversal is about 5.3 times faster than the column-wise
+significantly. The row-wise traversal is about **5.3** times faster than the column-wise
 traversal. You might find this performance intriguing. It's not immediately evident why
 a seemingly trivial difference in traversal order would lead to such a significant
 variation in execution time. The answer lies in a fundamental rule of CPU caches - cache
@@ -158,14 +158,14 @@ lines.
 
 Essentially, cache lines store the target byte and its neighboring bytes from memory. In
 the case of row-wise traversal, when a thread accesses `arr[0][0]`, the CPU loads the
-adjacent bytes into the same cache line. Consequently, when it needs to access
-subsequent bytes following `arr[0][0]`, it can retrieve them from the cache rather than
-the main memory, resulting in a cache hit. However, in the case of column-wise
-traversal, where `arr[1][0]` is the next element to access after `arr[0][0]`, it falls
-outside the boundaries of the cache line, leading to a cache miss. This requires the CPU
-to retrieve `arr[1][0]` from the main memory. This process repeats throughout the whole
-process, explaining why column-wise traversal is considerably slower than its row-wise
-counterpart.
+adjacent bytes such as `arr[0][1]`, `arr[0][2]`, `arr[0][3]`, and so on, into the same
+cache line. Consequently, when it needs to access subsequent bytes following
+`arr[0][0]`, it can retrieve them from the cache rather than the main memory, resulting
+in a cache hit. However, in the case of column-wise traversal, where `arr[1][0]` is the
+next element to access after `arr[0][0]`, it falls outside the boundaries of the cache
+line, leading to a cache miss. This requires the CPU to retrieve `arr[1][0]` from the
+main memory. This process repeats throughout the whole process, explaining why
+column-wise traversal is considerably slower than its row-wise counterpart.
 
 ### A Scalability Story
 
@@ -335,13 +335,13 @@ running on my laptop, play a significant role in this observed behavior.)
 But why are we observing we are observing? In `count_odds_nonscalable`, we're already
 using row-major traversal, and `thread_data` is stored contiguously in main memory. Each
 thread accesses different elements within the `thread_data` array, ensuring that there
-are no race conditions over `thread_data`.
+are no **race conditions** over `thread_data`.
 
 Now, let's try a thought experiment. Imagine using only two threads, with
 `thread_data[0]` and `thread_data[1]` dedicated to storing information for these
-threads. While it may seem that concurrent access is thread-safe, a hidden issue arises.
-It's possible that `thread_data[0]` and `thread_data[1]` **share the same cache line**.
-This phenomenon is known as **false sharing**.
+threads. While it may seem that concurrent access is **thread-safe**, a hidden issue
+arises. It's possible that `thread_data[0]` and `thread_data[1]` **share the same cache
+line**. This phenomenon is known as **false sharing**.
 
 False sharing occurs when different threads access data that shares a cache block with
 data being modified by another thread. In our case, if one core modifies
@@ -363,6 +363,8 @@ Conclusion: The mysteries of scalability in multithreading are closely tied to t
 interactions between CPU caches and the structure of data. False sharing, as
 demonstrated in our experiment, highlights how cache management can affect performance,
 even in seemingly race condition-free scenarios.
+
+## implement a circular buffer
 
 **References:**
 
