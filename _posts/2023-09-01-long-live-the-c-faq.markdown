@@ -45,6 +45,61 @@ int binary_search(int arr[], int size, int target) {
 This page records all the C-related notes, frequently asked questions and prgramming
 assignments I've encountered over the years.
 
+## Convert a string representation of a signed integer into an integer.
+
+The function below converts a string representation of a signed integer into an integer
+while also addressing concerns related to integer overflow.
+
+```c
+#define MAXIMUM 127
+#define MINIMUM -128
+
+int str2int(const char *s, int *result) {
+    assert(MAXIMUM / 10 == 12);
+    assert(MAXIMUM % 10 == 7);
+    assert(MINIMUM / 10 == -12);
+    assert(MINIMUM % 10 == -8);
+
+    while (*s == ' ' || *s == '\t') {
+        s++;  // Skip leading white spaces
+    }
+
+    int sign = 0;
+    if (*s == '-') {
+        sign = -1;
+        s += 1;
+    } else {
+        sign = 1;
+    }
+
+    int num = 0;
+    while (*s != '\0') {
+        if (*s >= '0' && *s <= '9') {
+            int digit = (*s - '0');
+            // It cannot check integer overflow after operation because it's too late.
+            if (sign == 1) {
+                if (num > MAXIMUM / 10 ||
+                    (num == MAXIMUM / 10 && digit > MAXIMUM % 10)) {
+                    return -1;
+                }
+            } else {
+                if (-num < MINIMUM / 10 ||
+                    (-num == MINIMUM / 10 && -digit < (MINIMUM % 10))) {
+                    return -1;
+                }
+            }
+
+            num = 10 * num + digit;
+            s += 1;
+        } else {
+            return -2;  // Non-digit character encountered
+        }
+    }
+    *result = sign * num;
+    return 0;
+}
+```
+
 ## Write a generic function to swap strings and arrays.
 
 Implement a `swap` function such that the following code
