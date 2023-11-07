@@ -45,6 +45,53 @@ int binary_search(int arr[], int size, int target) {
 This page records all the C-related notes, frequently asked questions and prgramming
 assignments I've encountered over the years.
 
+## How to tell if a system is little-endian or big-endian?
+
+A big-endian system stores the most-significant byte (MSB) of a word at the smallest
+memory address and the least-significant byte (LSB) at the largest. A little-endian
+system, in contrast, stores the least-significant byte at the smallest address. Also,
+consider an integer `int n = 0x0A0B0C0D;`. In this case, `0A` represents the MSB, while
+`0D` is the LSB. The _significance_ here refers to the influence a byte has on the value
+of the integer. Changes to the most significant byte have a more significant impact on
+the integer's value than changes to the least significant byte.
+
+To better understand endianness, let's take a look at this visual representation:
+
+<div style="text-align:center">
+  <img src="/assets/images/2023-09-01/32bit-Endianess.png" width="800">
+  <p style="font-size: 16px; color: #777;"></p>
+  <i>Endian example.</i>
+</div>
+
+The endianness of a system can be determined using C code. The following code snippet
+prints the byte values of an integer from the smallest memory address to the highest
+address:
+
+```c
+int main(void) {
+    int n = 0x0A0B0C0D;
+    printf("Hexadecimal: 0x%08X\n", n);
+    for (int i = 0; i < sizeof(n); ++i) {
+        printf("%p: %X\n", (void *)(char *)&n + i, *((char *)&n + i));
+    }
+}
+```
+
+In the code snippet, the expression `(char *)&n + i` is used to access individual bytes
+of an integer `n`. The `(char *)&n` part treats the address of `n` as a pointer to a
+character (byte), and then `+ i` is used to access each byte one by one within a loop.
+
+```
+Hexadecimal: 0x0A0B0C0D
+0x7ffe4e964310: D
+0x7ffe4e964311: C
+0x7ffe4e964312: B
+0x7ffe4e964313: A
+```
+
+It shows the least significant byte `0D` occupies the smallest address and the most
+significant byte `0A` occupies the biggest. Thus, my system is a little-endian system.
+
 ## Convert a string representation of a signed integer into an integer.
 
 The function below converts a string representation of a signed integer into an integer
