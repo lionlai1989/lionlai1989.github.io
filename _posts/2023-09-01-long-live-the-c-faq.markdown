@@ -45,6 +45,169 @@ int binary_search(int arr[], int size, int target) {
 This page records all the C-related notes, frequently asked questions and prgramming
 assignments I've encountered over the years.
 
+## Array of Characters and String Literal
+
+Understanding the nuances between _character arrays_ and _string literals_ in C is
+essential for writing robust and error-free code. In the given code snippet, I dive into
+the distinctions between `s1` and `s2`.
+
+Here, `s1` is an **array** (not a pointer) of characters containing the sequence
+"helloworld\0". The size of `s1` is determined by the number of characters in the
+initializer, resulting in `sizeof(s1)` being 11 bytes. On the other hand, `s2` is a
+**non-const pointer** pointing to the first character of the constant string literal
+"helloworld\0" which is stored in read-only memory in C. The size of `s2` is 8 bytes on
+a 64-bit system, representing the size of a pointer.
+
+```c
+#include <stdio.h>
+
+int main() {
+    char s1[] = "helloworld";  // s1 is an `array` with a length of 11 bytes.
+    char *s2 = "helloworld";   // s2 is a non-const `pointer` pointing to a constant string literal.
+
+    printf("s1: %s. sizeof(s1): %ld\n", s1, sizeof(s1));
+    printf("s2: %s. sizeof(s2): %ld\n", s2, sizeof(s2));
+    printf("The 0th character of s1 is %c %c\n", *s1, s1[0]);
+    printf("The 0th character of s2 is %c %c\n", *s2, s2[0]);
+    printf("The 11th character of s1 is %c %d\n", *(s1+10), s1[10]);
+    printf("The 11th character of s2 is %c %d\n", *(s2+10), s2[10]);
+
+    printf("\nModify s1 ...\n");
+    s1[0] = 'H';   // Modifying the 0th character from 'h' to 'H'.
+    printf("s1: %s. sizeof(s1): %ld\n", s1, sizeof(s1));
+
+    printf("\nModify s2 ...\n");
+    s2[0] = 'H';  // Attempting to change the 0th character leads to a segmentation fault.
+    printf("s2: %s. sizeof(s2): %ld\n", s2, sizeof(s2));
+}
+```
+
+The output is the following:
+
+```
+s1: helloworld. sizeof(s1): 11
+s2: helloworld. sizeof(s2): 8
+The 0th character of s1 is h h
+The 0th character of s2 is h h
+The 11th character of s1 is  0
+The 11th character of s2 is  0
+
+Modify s1 ...
+s1: Helloworld. sizeof(s1): 11
+
+Modify s2 ...
+Segmentation fault (core dumped)
+```
+
+There are few things to notice:
+
+-   Printing characters from `s1` and `s2` is done similarly. Both `*` and `[]` can be
+    used to access elements in C-strings and arrays. However, it's crucial to recognize
+    that `s1` and `s2` are fundamentally two different entities.
+
+-   Attempting to modify the contents of `s1` is permissible because `s1` is an array,
+    and arrays in C are mutable. In contrast, attempting to modify `s2` leads to a
+    segmentation fault. This is because `s2` points to a read-only constant string
+    literal, and modifying such literals in C results in a runtime error.
+
+## Circular Buffer
+
+A circular buffer is a data structure that employs a fixed-size buffer. When the buffer
+reaches its capacity, new data is written starting from the beginning, overwriting the
+oldest data. In contrast to regular queues, which typically raise an error when
+attempting to enqueue an element into a full queue, circular buffers efficiently manage
+this scenario.
+
+Here's a simple implementation in C:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+#define CAPACITY 4
+
+typedef struct {
+    unsigned int arr[CAPACITY];
+    unsigned int front;  // Point to the newest element.
+    unsigned int rear;   // Point to the oldest element.
+    unsigned int size;   // current number of elements stored in buffer.
+} CircularBuffer;
+
+int is_full(CircularBuffer *cb) { return cb->size == CAPACITY; }
+
+int is_empty(CircularBuffer *cb) { return cb->size == 0; }
+
+int pop(CircularBuffer *cb) {
+    if (is_empty(cb)) {
+        printf("Buffer is empty.\n");
+        return -1;
+    }
+
+    unsigned int value = cb->arr[cb->rear];
+    cb->rear = (cb->rear + 1) % CAPACITY;
+    cb->size -= 1;
+    return value;
+}
+
+void push(CircularBuffer *cb, unsigned int data) {
+    if (is_full(cb)) {  // Buffer is full. Pop the oldest element out.
+        pop(cb);
+    }
+
+    cb->arr[cb->front] = data;  // Push the new element
+    cb->front = (cb->front + 1) % CAPACITY;
+    cb->size += 1;
+}
+
+void display_buffer(CircularBuffer *cb) {
+    if (is_empty(cb)) {
+        printf("Buffer is empty.\n");
+        return;
+    }
+
+    printf("Circular buffer: ");
+    for (int i = 0; i < cb->size; ++i) {
+        int index = (cb->rear + i) % CAPACITY;
+        printf("%d ", cb->arr[index]);
+    }
+    printf("\n");
+}
+
+int main() {
+    CircularBuffer cb = {.front = 0, .rear = 0, .size = 0};
+
+    // Push three elements.
+    push(&cb, 1);
+    push(&cb, 2);
+    push(&cb, 3);
+    display_buffer(&cb);
+
+    // Push one element. Now buffer is full.
+    push(&cb, 4);
+    display_buffer(&cb);
+
+    // Continue pushing. Overwriting the oldest element.
+    push(&cb, 5);
+    display_buffer(&cb);
+
+    // Popping elements
+    printf("Popping %d out.\n", pop(&cb));
+    display_buffer(&cb);
+
+    return 0;
+}
+```
+
+**Output:**
+
+```
+Circular buffer: 1 2 3
+Circular buffer: 1 2 3 4
+Circular buffer: 2 3 4 5
+Popping 2 out.
+Circular buffer: 3 4 5
+```
+
 ## How to tell if a system is little-endian or big-endian?
 
 A big-endian system stores the most-significant byte (MSB) of a word at the smallest
