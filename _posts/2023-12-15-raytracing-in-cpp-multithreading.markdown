@@ -1,15 +1,12 @@
 ---
 layout: single
-title: Raytracing in C++ and Multithreading
+title: Ray Tracing in C++ Multithreading
 categories: [raytracing]
 description: "."
 toc: true
 wip: false
 date: 2023-12-15
 ---
-
-https://juanchopanzacpp.wordpress.com/2013/02/26/concurrent-queue-c11/
-https://www.reddit.com/r/GraphicsProgramming/comments/oyksf4/cpu_raytracer_multithreading/
 
 Ray tracing, a powerful technique for rendering scenes, is ideal for showcasing the
 prowess of multithreading in programming. In this post, I dive into the details of
@@ -24,6 +21,8 @@ specifically focusing on the second article, the
 Ray tracing involves simulating the trajectory of rays as they traverse a scene To keep
 our focus on multithreading, I'll touch upon essential aspects of ray tracing related to
 multithreading without delving into intricate ray tracing details.
+
+### Shooting Primary Rays
 
 In a nutshell, a primary ray emits from the observer's eye, intersects the midpoint of a
 pixel, and collides with an object, resulting in an image formation. This process is
@@ -81,7 +80,7 @@ example illustrating the concept:
 </div>
 
 Choosing only a single sample at the center of a pixel yields an outcome resembling a
-triangle with uneven edges, as depicted below. A more effective approach involves
+triangle with uneven edges, as depicted above. A more effective approach involves
 selecting multiple sample points within each pixel and computing the pixel value by
 averaging these samples. In the following example, four sample points are randomly
 chosen from a pixel. The average of these four pixel values is then calculated and
@@ -104,8 +103,18 @@ assigned as the final value for the pixel.
     </div>
 </div>
 
-The above description is implemented with
-[the code snippet](https://github.com/RayTracing/raytracing.github.io/blob/7dd9a8099904f4508940b8fcb9781d079d1886d1/src/TheNextWeek/camera.h#L42):
+### Writing to `std::cout`
+
+An additional note is that the single-threaded program writes pixel values as integers
+to `std::cout` and utilizes the Linux right triangle bracket (>) to append the numbers
+to a file, for example, `build/theNextWeek > test.ppm`. This approach implies that
+pixels must be sequentially written out. Consequently, this design choice forces the
+sequential calculation and output of pixel values one after another.
+
+### Putting Things Together
+
+Bringing it all together, the aforementioned description is realized through
+[the following code snippet](https://github.com/RayTracing/raytracing.github.io/blob/7dd9a8099904f4508940b8fcb9781d079d1886d1/src/TheNextWeek/camera.h#L42):
 
 ```cpp
 std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
@@ -123,37 +132,30 @@ for (int j = 0; j < image_height; ++j) {
 }
 ```
 
-An additional note is that the single-threaded program writes pixel values as integers
-to `std::cout` and utilizes the Linux right triangle bracket (>) to append the numbers
-to a file, for example, `build/theNextWeek > test.ppm`. This approach implies that
-pixels must be sequentially written out. Consequently, this design choice forces the
-sequential calculation and output of pixel values one after another.
-
 ## Transitioning from Single-Threaded to Multithreaded
 
-After laying the groundwork for multithreading in ray tracing, let's explore the
-practical implementation. There are three feasible approaches to introducing
-multithreading into the ray tracing program:
+After laying the groundwork for multithreading in ray tracing, it seems to me that there
+are three feasible approaches to introducing multithreading into the single-threaded
+program:
 
 -   Each newly spawned thread processes multiple samples for a pixel.
 -   Each newly spawned thread processes all samples for a pixel.
 -   Each newly spawned thread processes all pixels for a row.
 
-The implementation detail of the above three is trivial. Thus, I will just explain how a
-thread processes all pixels for a row. Essentially, a thread processes all pixels in a
-row and stores the result into a vector of pixel of color. In the main thread, it will
-wait for each thread finishing processing the whole row and get the returned vector of
-pixel's color from `future` object.
-
-my approach is to use multiple threads to process samples for each pixel. After a thread
-is finished, it returns pixel value in this thread. The main thread will accumulate
-pixels derived from each thread and write to standard output. Here is the code snippet:
+The details of implementing the three approaches mentioned above are straightforward.
+Therefore, I will specifically focus on how a thread manages the processing of all
+pixels in a row. In essence, a thread is responsible for handling all pixels within a
+row and storing the results in a vector representing the pixel colors. Subsequently, in
+the main thread, it awaits the completion of each thread's processing of the entire row
+and retrieves the resulting vector of pixel colors from the `futures` object. Once this
+vector is obtained from the `futures`, it sequentially writes the pixel values to
+`std::cout`. The corresponding code snippet is as follows:
 
 ```cpp
 for (int j = 0; j < image_height; ++j) {
     // Multi thread
     std::shared_future<std::vector<color>> f = futures.front();
-    auto vec_pixel_color = f.get();
+    std::vector<color> vec_pixel_color = f.get();
     futures.pop();
     for (int i = 0; i < vec_pixel_color.size(); ++i) {
         write_color(std::cout, vec_pixel_color[i], samples_per_pixel);
@@ -161,21 +163,16 @@ for (int j = 0; j < image_height; ++j) {
 }
 ```
 
-### Producer Thread and BlockingQueue
+### Creating a Producer Thread and Multiple Processing Threads
 
-On my laptop, it has 16 CPUs. It means that if running a CPU-bound program, such as
-raytracing as I did here, it doesn't make too much sense to spawn more than 16 threads
-for each time instance. Because if running more than 16 threads, there are not enough
-CPUs to run it. Bear this in mind, in order To achieve the above feature, we need a
-producer thread and a blocking queue. A blocking queue is a thread-safe queue data
-structure which guarantee the pushing and poping things into and from this pool is
-thread-safe. The producer thread is responsible for pushing things into the blocking
-queue if the thread pool is not full. Thus, the overall multithreading structure can be
-described as below:
+In order to achieve the above functionality, we need a blocking queue, a producer thread
+and a lambda function on which every newly spawned pixel-processing thread runs. Each
+component is explained below:
 
--   `BlockingQueue`: It is a queue-like data structure which supports thread-safe
-    pushing and popping. In `push`, the condition variable `_cond` will wait until the
-    queue is not full. while waiting, it atomically unlocks lock, blocks the current
+-   `BlockingQueue`: This is a queue data structure that facilitates thread-safe pushing
+    and popping operations. In the `push` and `pop` methods, the condition variable
+    `_cond` awaits the lambda function's returned value to be `true`. During this
+    waiting period, it automatically releases the lock, temporarily halting the current
     executing thread.
 
 ```cpp
@@ -220,27 +217,10 @@ class BlockingQueue {
 };
 ```
 
--   `producer_func`, `lambda_func` and `producer_thread`: The producer function
-    `producer_func` spawns new thread which processes pixels in a row and pushes the
-    future into the `BlockingQueue`. One thing to note here is that if the size of
-    `BlockingQueue` is 4, intuitively it seems there is maximum 4 threads running
-    concurrently. But there are actually at most 5 threads running at any given time.
-    Because while the queue is full of 4 futures, the fifth thread is spawned and run.
-    It's just the future of the fifth thread is waiting to be pushed into the
-    `BlockingQueue`. The lambda function `lambda_func` processes every pixels in a row
-    and store the pixel value into a vector of color `vector<color>`. The
-    `producer_thread` is a thread running `producer_func`.
+-   `lambda_func`: The lambda function `lambda_func` processes every pixels in a row and
+    store the pixel value into a vector of color `std::vector<color>`.
 
 ```cpp
-void producer_func(BlockingQueue<std::shared_future<std::vector<color>>> &futures, int image_height, int image_width, std::function<std::vector<color>(int, int)> lambda_func) {
-    for (int j = 0; j < image_height; ++j) {
-        // A new thread is spawned and pushed into BlockingQueue.
-        // If BlockingQueue is full, this thread will unlock the lock and wait until an element is pop out.
-        std::shared_future<std::vector<color>> f = std::async(std::launch::async, lambda_func, j, image_width);
-        futures.push(f);
-    }
-}
-
 auto lambda_func = [this, &world](int j, int width) {
     std::vector<color> vec_pixel_color(width, color(0, 0, 0));
     for (int i = 0; i < width; ++i) {
@@ -253,7 +233,31 @@ auto lambda_func = [this, &world](int j, int width) {
     }
     return vec_pixel_color;
 };
+```
 
+-   `producer_func`: : The producer function, `producer_func`, initiates new
+    pixel-processing threads to process pixels in a row and inserts the resulting
+    `future` into the `BlockingQueue`. It's important to note that when the
+    `BlockingQueue` size is set to 4, the intuitive assumption might be that a maximum
+    of 4 threads can run concurrently. However, in reality, there are potentially up to
+    5 threads active at any given time. This occurs because, even when the queue is
+    saturated with 4 `future` instances, a fifth thread is spawned and executed. The
+    `future` of this fifth thread is merely awaiting placement into the `BlockingQueue`.
+
+```cpp
+void producer_func(BlockingQueue<std::shared_future<std::vector<color>>> &futures, int image_height, int image_width, std::function<std::vector<color>(int, int)> lambda_func) {
+    for (int j = 0; j < image_height; ++j) {
+        // A new thread is spawned and pushed into BlockingQueue.
+        // If BlockingQueue is full, this thread will unlock the lock and wait until an element is pop out.
+        std::shared_future<std::vector<color>> f = std::async(std::launch::async, lambda_func, j, image_width);
+        futures.push(f);
+    }
+}
+```
+
+-   `producer_thread`: It is a producer thread running `producer_func`.
+
+```
 std::thread producer_thread(producer_func, std::ref(futures), image_height, image_width, lambda_func);
 ```
 
@@ -296,36 +300,56 @@ for (int j = 0; j < image_height; ++j) {
 producer_thread.join();
 ```
 
-### Profile single threaded and multithreaded program
+### Profiling Multithreaded Programs
 
 The ultimate way to verify a multithreaded program is to profile it and compare the
-performance is linearly improved. After defining all compoments, I can compare the
-multithreaded program with the baseline (origianl code). The image size is 1024 x 1024.
-I choose 256 and 1024 samples per pixels. The baseline is defined as the original code
-without using multithreading.
+performance with single-threaded program. After defining all compoments, I can compare
+the multithreaded program with the baseline. The baseline here is defined as using
+original single-threaded code to run the program.
+
+My laptop has 16 CPUs. It means that if running a **CPU-bound** program, such as ray
+tracing as I did here, it doesn't make too much sense to spawn more than 16 threads.
+Because if running more than 16 threads, there are not enough CPUs to run it. Therefore,
+I decide to use `Concurrency=2` and `Concurrency=4` in this experiment to prevent
+interference from other concurrently running software
+
+The resolution of the rendered image is set at 1024 x 1024 pixels, with variations in
+the number of samples per pixel. Specifically, 256 and 1024 samples per pixel have been
+chosen for evaluation.
 
 | Samples | Baseline | Concurrency=2 | Concurrency=4 |
 | ------- | -------- | ------------- | ------------- |
 | 256     |          | (sec)         | (sec)         |
 | 1024    |          | (sec)         | (sec)         |
 
-The result shows that using multithreading can reduce the running time. However, the
-performace is not linearly improved with respect to the size of the `BlockingQueue`. I'd
-expect that the runnign time would be quatered of the baseline when `Concurrency=4`.
+While the results of introducing multithreading indicate a reduction in overall running
+time, it's noteworthy that the performance improvement is not strictly proportional to
+the size of the `BlockingQueue`. I would anticipate the running time to be one-fourth of
+the baseline when `Concurrency=4`.
 
-There are few possibilities of this phenomenon. I listed them below:
+Several potential explanations for this phenomenon are:
 
--   This main program (main thread) writes to standard output sequentially pixel by
-    pixel. It could be the reason that is blocking the main program popping futures out
-    of the `BlockingQueue`. I tried disabling the writing pixel value to standard
-    output, but there is not significant performance improvement.
+-   The main program (main thread) sequentially writes pixel values to the standard
+    output. This sequential output operation might be a bottleneck, potentially
+    hindering the main program's ability to efficiently retrieve `future`s from the
+    `BlockingQueue`. Interestingly, even after disabling the pixel value output, a
+    significant performance improvement was not observed.
 
--   Due to the nature of raytracing, it should be a great example of showcasing the
-    power of multithreading because every pixel can be calculated independently and not
-    related to the neighboring pixels. The only thing is shared among multiple threads
-    in this program is `world`. `world` is an object which describes the scene. `world`
-    is a constant reference `const hittable& world` that is read-only. My understanding
-    of multithreading is that if a pass-by-reference shared object in different threads
-    can only be read but not write, then mutex and lock are not needed when accessing
-    them. (However, I wonder how it works in low level. How can two threads read the
-    same memory address (pass-by-reference) without stepping on others' toe).
+-   Ray tracing is an ideal candidate for showcasing the benefits of multithreading as
+    each pixel's calculation is independent and unrelated to neighboring pixels. The
+    only thing is shared among multiple threads in this program is `world`. `world` is
+    an object which describes the scene. `world` is a constant reference
+    `const hittable& world` that is read-only. According to my understanding of
+    multithreading, if a shared object passed by reference is only read, not written,
+    the use of mutex and lock is unnecessary during access. (However, I am curious about
+    the low-level mechanics. How can two threads read from the same memory address
+    (passed by reference) without causing conflicts?)
+
+-   Considering the aforementioned reasoning, I've tried to make `world` a constant
+    pass-by-value object to prevent multiple threads from sharing the same object.
+    However, there was no noticeable improvement in program performance.
+
+**References:**
+
+-   [Scratchapixel](https://www.scratchapixel.com/)
+-   [Ray Tracing in One Weekend Book Series](https://github.com/RayTracing/raytracing.github.io/tree/release)
