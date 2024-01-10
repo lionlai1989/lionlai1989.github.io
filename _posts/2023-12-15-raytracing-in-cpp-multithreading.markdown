@@ -16,9 +16,17 @@ codebase from the
 specifically focusing on the second article, the
 [Ray Tracing: The Next Week](https://raytracing.github.io/books/RayTracingTheNextWeek.html).
 
+<div style="text-align: center; margin-bottom: 10px">
+  <img src="/assets/images/2023-12-15/4_threads_8192_samples.png"
+    alt=""
+    style="margin: auto; width: 100%; max-width: 800px; margin-bottom: 20px">
+  <br>
+  <i>A scene is constructed using ray tracing with 8192 samples per pixel, taking 6.6 hours with CONCURRENCY=4.</i>
+</div>
+
 ## The Fundamentals of Ray Tracing
 
-Ray tracing involves simulating the trajectory of rays as they traverse a scene To keep
+Ray tracing involves simulating the trajectory of rays as they traverse a scene. To keep
 our focus on multithreading, I'll touch upon essential aspects of ray tracing related to
 multithreading without delving into intricate ray tracing details.
 
@@ -32,7 +40,7 @@ in the images below. The two images below are adapted from
 
 <div style="text-align: center; margin-bottom: 10px">
     <img src="/assets/images/2023-12-15/lightingnoshadow.gif"
-      alt="windows tile raster"
+      alt=""
       style="margin: auto; width: 100%; max-width: 400px; margin-bottom: 20px">
     <br>
     <i>A primary ray emits from the observer's eye and intersects the center of a pixel.</i>
@@ -40,7 +48,7 @@ in the images below. The two images below are adapted from
 
 <div style="text-align: center; margin-bottom: 10px">
     <img src="/assets/images/2023-12-15/pixelrender.gif"
-      alt="windows tile raster"
+      alt=""
       style="margin: auto; width: 100%; max-width: 400px; margin-bottom: 20px">
     <br>
     <i>Shooting multiple primary rays forms an image.</i>
@@ -65,14 +73,14 @@ example illustrating the concept:
 <div style="display:flex; justify-content:center;">
     <div style="text-align: center; margin-bottom: 10px">
         <img src="/assets/images/2023-12-15/anti_aliasing_rasterization.png"
-        alt="windows tile raster"
+        alt=""
         style="margin: auto; width: 100%; max-width: 300px; margin-bottom: 20px">
         <br>
-        <i>A rectangle is sampled with one middle point per pixel..</i>
+        <i>A rectangle is sampled with one middle point per pixel.</i>
     </div>
     <div style="text-align: center; margin-bottom: 10px">
         <img src="/assets/images/2023-12-15/anti_aliasing_rasterization_filled.png"
-        alt="windows tile raster"
+        alt=""
         style="margin: auto; width: 100%; max-width: 300px; margin-bottom: 20px">
         <br>
         <i>After sampling, the triangle is with non-smooth edges.</i>
@@ -89,14 +97,14 @@ assigned as the final value for the pixel.
 <div style="display:flex; justify-content:center;">
     <div style="text-align: center; margin-bottom: 10px">
         <img src="/assets/images/2023-12-15/anti_aliasing_rasterization_samples.png"
-        alt="windows tile raster"
+        alt=""
         style="margin: auto; width: 100%; max-width: 300px; margin-bottom: 20px">
         <br>
         <i>Four sampling points are randomly picked within a pixel.</i>
     </div>
     <div style="text-align: center; margin-bottom: 10px">
         <img src="/assets/images/2023-12-15/anti_aliasing_rasterization_samples_filled.png"
-        alt="windows tile raster"
+        alt=""
         style="margin: auto; width: 100%; max-width: 300px; margin-bottom: 20px">
         <br>
         <i>The averaged pixel value better captures the shape of a triangle.</i>
@@ -261,7 +269,8 @@ void producer_func(BlockingQueue<std::shared_future<std::vector<color>>> &future
 std::thread producer_thread(producer_func, std::ref(futures), image_height, image_width, lambda_func);
 ```
 
-Putting things together, we can get:
+Putting all things together, we can get
+[the following](https://github.com/lionlai1989/raytracing.github.io/blob/1996504b76bd77272073e63bfac9b08e9c0323f9/src/TheNextWeek/camera.h#L95):
 
 ```cpp
 std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
@@ -310,22 +319,39 @@ original single-threaded code to run the program.
 My laptop has 16 CPUs. It means that if running a **CPU-bound** program, such as ray
 tracing as I did here, it doesn't make too much sense to spawn more than 16 threads.
 Because if running more than 16 threads, there are not enough CPUs to run it. Therefore,
-I decide to use `Concurrency=2` and `Concurrency=4` in this experiment to prevent
-interference from other concurrently running software
+I decide to use `CONCURRENCY=2` and `CONCURRENCY=4` in this experiment to prevent
+interference from other concurrently running software on my laptop.
 
 The resolution of the rendered image is set at 1024 x 1024 pixels, with variations in
 the number of samples per pixel. Specifically, 256 and 1024 samples per pixel have been
-chosen for evaluation.
+chosen for evaluation. The results are shown as follow:
 
-| Samples | Baseline | Concurrency=2 | Concurrency=4 |
-| ------- | -------- | ------------- | ------------- |
-| 256     |          | (sec)         | (sec)         |
-| 1024    |          | (sec)         | (sec)         |
+<div style="display:flex; justify-content:center;">
+    <div style="text-align: center; margin-bottom: 10px">
+        <img src="/assets/images/2023-12-15/4_threads_256_samples.png"
+        alt=""
+        style="margin: auto; width: 100%; max-width: 600px; margin-bottom: 20px">
+        <br>
+        <i>256 samples per pixel results to a noisier image.</i>
+    </div>
+    <div style="text-align: center; margin-bottom: 10px">
+        <img src="/assets/images/2023-12-15/4_threads_1024_samples.png"
+        alt=""
+        style="margin: auto; width: 100%; max-width: 600px; margin-bottom: 20px">
+        <br>
+        <i>1024 samples per pixel creates a clearer image.</i>
+    </div>
+</div>
+
+| Samples | Baseline   | CONCURRENCY=2 | CONCURRENCY=4 |
+| ------- | ---------- | ------------- | ------------- |
+| 256     | 1680 (sec) | 792 (sec)     | 730 (sec)     |
+| 1024    | 6577 (sec) | 3108 (sec)    | 2883 (sec)    |
 
 While the results of introducing multithreading indicate a reduction in overall running
 time, it's noteworthy that the performance improvement is not strictly proportional to
 the size of the `BlockingQueue`. I would anticipate the running time to be one-fourth of
-the baseline when `Concurrency=4`.
+the baseline when `CONCURRENCY=4`.
 
 Several potential explanations for this phenomenon are:
 
@@ -349,7 +375,26 @@ Several potential explanations for this phenomenon are:
     pass-by-value object to prevent multiple threads from sharing the same object.
     However, there was no noticeable improvement in program performance.
 
+## Running Code Yourself
+
+The source code is committed to this
+[branch](https://github.com/lionlai1989/raytracing.github.io/tree/multithreading). The
+changes are made in the following three files:
+
+-   `CMakeLists.txt`
+-   `src/TheNextWeek/camera.h`
+-   `src/TheNextWeek/main.cc`
+
+After pulling from the branch, the following code can be run to replicate the result:
+
+```
+cmake -B build && cmake --build build && time build/theNextWeek > 4_threads_256_samples.ppm
+```
+
+It creates an image using `CONCURRENCY=4` and 256 samples per pixel.
+
 **References:**
 
 -   [Scratchapixel](https://www.scratchapixel.com/)
 -   [Ray Tracing in One Weekend Book Series](https://github.com/RayTracing/raytracing.github.io/tree/release)
+-   [Multithreading and Optimization Discussion on TheCherno's GitHub](https://github.com/TheCherno/RayTracing/issues/6)
