@@ -364,8 +364,6 @@ interactions between CPU caches and the structure of data. False sharing, as
 demonstrated in our experiment, highlights how cache management can affect performance,
 even in seemingly race condition-free scenarios.
 
-## implement a circular buffer
-
 **References:**
 
 -   [CPU Caches and Why You Care](https://www.aristeia.com/TalkNotes/codedive-CPUCachesHandouts.pdf)
