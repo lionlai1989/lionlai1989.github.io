@@ -358,39 +358,6 @@ tensor([[0.5622, 0.9026, 0.5692],
 True
 ```
 
-nvidia can also be install via pip???
-
-by following this
-[page](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#pip-wheels),
-it seems it's a good idea to
-
-```
-
-
-python3 -m pip install -r nvidia_requirements.txt
-```
-
-```requirements.txt
---extra-index-url https://pypi.org/simple
-
-nvidia-cuda-runtime-cu12
-nvidia-cuda-cupti-cu12
-nvidia-cuda-nvcc-cu12
-nvidia-nvml-dev-cu12
-nvidia-cuda-nvrtc-cu12
-nvidia-nvtx-cu12
-nvidia-cuda-sanitizer-api-cu12
-nvidia-cublas-cu12
-nvidia-cufft-cu12
-nvidia-curand-cu12
-nvidia-cusolver-cu12
-nvidia-cusparse-cu12
-nvidia-npp-cu12
-nvidia-nvjpeg-cu12
-nvidia-nvjitlink-cu12
-nvidia-cuda-opencl-cu12
-```
-
 ## Following the Exact Steps to Install PyTorch3D
 
 After installing the NVIDIA driver, CUDA Toolkit, cuDNN, creating a `venv` virtual
