@@ -316,6 +316,16 @@ There are two CUDA folders after installing CUDA Toolkit, `usr/local/cuda` and
 `usr/local-12.1/cuda`, on my laptop. I don't really know why. Thus, I copy every files
 to both of the folders.
 
+3. Verify the installation by following
+   [this StackOverflow question](https://stackoverflow.com/questions/31326015/how-to-verify-cudnn-installation).
+
+```
+$ cat /usr/local/cuda/include/cudnn_version.h | grep CUDNN_MAJOR -A 2
+#define CUDNN_MAJOR 8
+#define CUDNN_MINOR 9
+#define CUDNN_PATCHLEVEL 7
+```
+
 # Install PyTorch in `venv` Virtual Environment
 
 I do not utilize `conda`; if necessary, I would prefer to employ `conda` within a Docker
