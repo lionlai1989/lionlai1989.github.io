@@ -294,14 +294,14 @@ the files into the local directory.
 
 Follow the steps below to install cuDNN.
 
-1. Unzip the cuDNN package.
+- Unzip the cuDNN package.
 
 ```shell
 $ cd Downloads/
 $ tar -xvf cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz
 ```
 
-2. Copy the following files into the CUDA toolkit directory.
+- Copy the following files into the CUDA toolkit directory.
 
 ```shell
 sudo cp cudnn-linux-x86_64-8.9.7.29_cuda12-archive/include/cudnn*.h /usr/local/cuda/include
@@ -316,7 +316,7 @@ There are two CUDA folders after installing CUDA Toolkit, `usr/local/cuda` and
 `usr/local-12.1/cuda`, on my laptop. I don't really know why. Thus, I copy every files
 to both of the folders.
 
-3. Verify the installation by following
+- Verify the installation by following
    [this StackOverflow question](https://stackoverflow.com/questions/31326015/how-to-verify-cudnn-installation).
 
 ```
@@ -325,6 +325,8 @@ $ cat /usr/local/cuda/include/cudnn_version.h | grep CUDNN_MAJOR -A 2
 #define CUDNN_MINOR 9
 #define CUDNN_PATCHLEVEL 7
 ```
+
+We can confirm that `cuDNN v8.9.7` has been successfully installed.
 
 # Install PyTorch in `venv` Virtual Environment
 
