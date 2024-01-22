@@ -13,28 +13,27 @@ CUDA Toolkit, and cuDNN, to create a GPU development environment is introduced.
 
 # Why Write This Guide?
 
-Today, I attempted to install PyTorch3D within my venv virtual environment but
-encountered difficulties despite having successfully installed PyTorch, the NVIDIA
-driver, CUDA Toolkit, and cuDNN using pip.
+Today, I attempted to install [PyTorch3D](https://github.com/facebookresearch/pytorch3d)
+within my `venv` virtual environment using `pip` but encountered difficulties despite
+having successfully installed PyTorch, the NVIDIA driver, CUDA Toolkit, and cuDNN on my
+system.
 
-PyTorch3D recommends using conda for installation, but I prefer not to install conda on
-my laptop. Consequently, my sole recourse is to leverage Docker to create an independent
-system environment, run a Docker container, and install PyTorch3D with conda within it.
-However, I discovered that PyTorch 2.\* mandates CUDA Toolkit version 12.1, while my
-laptop currently hosts CUDA Toolkit version 12.0. As a result, I aim to meticulously
-document the entire process of installing and updating the NVIDIA driver, CUDA Toolkit,
-and cuDNN during the development workflow.
+I discovered that PyTorch 2.\* requires CUDA Toolkit version 12.1, while my laptop
+currently has CUDA Toolkit version 12.0. While I am not certain if this version mismatch
+is the cause of the problem in installing PyTorch3D (probably not), I have decided to
+reinstall everything and meticulously document the entire process of installing and
+updating the NVIDIA driver, CUDA Toolkit, and cuDNN during the development workflow.
 
 The objectives of this post are as follows:
 
 -   Document the step-by-step process of installing and updating the NVIDIA driver, CUDA
     Toolkit, and cuDNN.
--   Record the procedure for creating a venv virtual environment, installing PyTorch,
-    successfully running PyTorch utilities with GPU support, and installing pytorch3d
-    within the venv virtual environment.
--   In the event of unsuccessful installation of pytorch3d within the venv virtual
+-   Record the procedure for creating a `venv` virtual environment, installing PyTorch,
+    successfully running PyTorch utilities with GPU support, and installing PyTorch3D
+    within the `venv` virtual environment.
+-   In the event of unsuccessful installation of PyTorch3D within the `venv` virtual
     environment, create a Docker image to establish an environment capable of running
-    pytorch3d. This environment should be compatible with the following three scenarios:
+    PyTorch3D. This environment should be compatible with the following three scenarios:
     -   Jupyter Notebook
     -   Command-line shell
     -   Visual Studio Code, ensuring it recognizes the environment.
@@ -248,13 +247,6 @@ export CPATH=/usr/local/cuda/include:$CPATH
 export DYLD_LIBRARY_PATH=/usr/local/cuda/lib:$DYLD_LIBRARY_PATH
 ```
 
-<!-- it seems i need to install the following two packages.
-
-```
-sudo apt-get install cuda-toolkit # probably do not do this.
-sudo apt-get install nvidia-cuda-toolkit #  this is for nvcc -V. probably do not do this.
-``` -->
-
 Now, let's verify it.
 
 ```shell
@@ -275,6 +267,16 @@ following links:
 
 -   [StackOverflow question on Different CUDA versions shown by nvcc and NVIDIA-smi](https://stackoverflow.com/questions/53422407/different-cuda-versions-shown-by-nvcc-and-nvidia-smi)
 -   [The detected CUDA version mismatches the version that was used to compile PyTorch](https://github.com/vllm-project/vllm/issues/1548)
+
+**Note:** Some guides use the following two commands to install the CUDA Toolkit, but it
+seems unnecessary to me since I successfully installed the NVIDIA driver and CUDA
+Toolkit without them.
+
+```shell
+# I think the following two commands are not needed.
+sudo apt-get install cuda-toolkit
+sudo apt-get install nvidia-cuda-toolkit
+```
 
 ## Installing cuDNN
 
@@ -364,6 +366,12 @@ After installing the NVIDIA driver, CUDA Toolkit, cuDNN, creating a `venv` virtu
 environment, and installing PyTorch `2.1.*`, I can finally proceed to install
 [PyTorch3D](https://github.com/facebookresearch/pytorch3d/tree/main).
 
+**Note:**
+[PyTorch3D's official guide](https://github.com/facebookresearch/pytorch3d/blob/main/INSTALL.md)
+recommends using `conda` for installation, but I prefer not to install `conda` on my
+laptop. Thus, I attempted to build/install from source within the venv virtual
+environment.
+
 **[NVIDIA Python wheels](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#pip-wheels):**
 NVIDIA provides Python Wheels for installing CUDA through pip, primarily for using CUDA
 with Python. These packages are intended for runtime use and do not currently include
@@ -422,9 +430,8 @@ PyTorch (not above PyTorch 2.1), as documented in the
 file. Essentially, all versions of every software must be compatible with each other;
 _otherwise, it won't work._
 
-<!-- # download and build pytorch dockerimage.
+# Using Docker
 
-https://hub.docker.com/r/pytorch/pytorch/tags?page=1
+tbd
 
-Reference: CUDA, cuDNN and Nvidia Driver.
-https://medium.com/ibm-data-ai/straight-forward-way-to-update-cuda-cudnn-and-nvidia-driver-and-cudnn-80118add9e53 -->
+[PyTorch's dockerhub](https://hub.docker.com/r/pytorch/pytorch/tags)
