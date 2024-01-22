@@ -360,6 +360,26 @@ tensor([[0.5622, 0.9026, 0.5692],
 True
 ```
 
+**Install TensorFlow in `venv` Virtual Environment:** The process of installing
+TensorFlow is similar to PyTorch's. Here are the step-by-step instructions.
+
+-   Create, activate a Python `venv` virtual environment and update `pip` and
+    `setuptools`:
+
+```
+python3.10 -m venv venv_gpu && source venv_gpu/bin/activate && python3 -m pip install --upgrade pip setuptools
+```
+
+-   Install latest stable version of TensorFlow by following
+    [the official guide](https://www.tensorflow.org/install/pip).
+
+```
+# For GPU users
+python3 -m pip install tensorflow[and-cuda]
+# For CPU users
+python3 -m pip install tensorflow
+```
+
 ## Following the Exact Steps to Install PyTorch3D
 
 After installing the NVIDIA driver, CUDA Toolkit, cuDNN, creating a `venv` virtual
