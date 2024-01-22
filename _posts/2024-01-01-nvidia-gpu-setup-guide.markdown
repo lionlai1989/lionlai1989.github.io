@@ -294,14 +294,14 @@ the files into the local directory.
 
 Follow the steps below to install cuDNN.
 
-- Unzip the cuDNN package.
+-   Unzip the cuDNN package.
 
 ```shell
 $ cd Downloads/
 $ tar -xvf cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz
 ```
 
-- Copy the following files into the CUDA toolkit directory.
+-   Copy the following files into the CUDA toolkit directory.
 
 ```shell
 sudo cp cudnn-linux-x86_64-8.9.7.29_cuda12-archive/include/cudnn*.h /usr/local/cuda/include
@@ -316,8 +316,8 @@ There are two CUDA folders after installing CUDA Toolkit, `usr/local/cuda` and
 `usr/local-12.1/cuda`, on my laptop. I don't really know why. Thus, I copy every files
 to both of the folders.
 
-- Verify the installation by following
-   [this StackOverflow question](https://stackoverflow.com/questions/31326015/how-to-verify-cudnn-installation).
+-   Verify the installation by following
+    [this StackOverflow question](https://stackoverflow.com/questions/31326015/how-to-verify-cudnn-installation).
 
 ```
 $ cat /usr/local/cuda/include/cudnn_version.h | grep CUDNN_MAJOR -A 2
@@ -391,6 +391,43 @@ python3 -m pip install tensorflow[and-cuda]
 # For CPU users
 python3 -m pip install tensorflow
 ```
+
+## To Export or Not To Export `LD_LIBRARY_PATH`
+
+After installing and attempting to run a PyTorch program, I encountered the following
+error:
+
+```
+Could not load library libcudnn_cnn_train.so.8. Error: /usr/local/cuda-12.1/lib64/libcudnn_cnn_train.so.8: undefined symbol: _ZN5cudnn3cnn34layerNormFwd_execute_internal_implERKNS_7backend11VariantPackEP11CUstream_stRNS0_18LayerNormFwdParamsERKNS1_20NormForwardOperationEmb, version libcudnn_cnn_infer.so.8
+```
+
+The strange thing is that this issue occurred after I followed the instructions in the
+official guide, which include exporting `PATH` and `LD_LIBRARY_PATH` in `.bashrc`.
+
+Upon further investigation, I found that the latest PyTorch version installs the cuDNN
+library by default. If I set `LD_LIBRARY_PATH=/usr/local/cuda-12.1/lib64/` in the system
+path, my PyTorch program does not search for the cuDNN path in its virtual environment,
+specifically `./venv_gpu/lib/python3.10/site-packages/nvidia/cudnn/lib/`. While I'm not
+sure why it doesn't search the local path, there are two solutions to resolve this:
+
+-   Add `./venv_gpu/lib/python3.10/site-packages/nvidia/cudnn/lib/` to
+    `LD_LIBRARY_PATH`.
+-   Do not export `LD_LIBRARY_PATH` in `.bashrc`.
+
+I choose the latter option, not exporting `LD_LIBRARY_PATH` in `.bashrc`, as it is
+simpler. This allows each Python virtual environment to install different cuDNN
+libraries while using PyTorch.
+
+**References:**
+
+-   https://github.com/pytorch/pytorch/issues/96595
+-   https://stackoverflow.com/questions/70340812/how-to-install-pytorch-with-cuda-support-with-pip-in-visual-studio
+-   https://stackoverflow.com/questions/70340812/how-to-install-pytorch-with-cuda-support-with-pip-in-visual-studio
+-   https://github.com/pytorch/pytorch/issues/104591
+-   https://blog.csdn.net/wangmou211/article/details/134595135
+-   https://discuss.pytorch.org/t/could-not-load-library-libcudnn-cnn-train-so-8-while-training-convnet/171334/3
+-   https://blog.csdn.net/qq_37700257/article/details/134312228
+-   https://stackoverflow.com/questions/70340812/how-to-install-pytorch-with-cuda-support-with-pip-in-visual-studio
 
 ## Following the Exact Steps to Install PyTorch3D
 
