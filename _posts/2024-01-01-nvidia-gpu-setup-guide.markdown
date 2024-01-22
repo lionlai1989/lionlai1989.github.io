@@ -91,7 +91,7 @@ In the scenario of updating the NVIDIA Driver, CUDA Toolkit, and cuDNN, my prefe
 to remove everything that has already been installed and initiate the process from a
 clean state.
 
-Here are two links that might be helpful:
+Here are the links that might be helpful:
 
 1. [Official guide to remove CUDA Toolkit and driver](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#removing-cuda-toolkit-and-driver)
 2. [Stack Overflow question on uninstalling NVIDIA Driver and CUDA Toolkit](https://stackoverflow.com/questions/56431461/how-to-remove-cuda-completely-from-ubuntu)
@@ -280,7 +280,7 @@ sudo apt-get install nvidia-cuda-toolkit
 
 ## Installing cuDNN
 
-Here are the links that can be helpful for post-installation actions:
+Here are the links that can be helpful for installing cuDNN:
 
 -   [Official NVIDIA cuDNN Installation Guide](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html)
 -   [StackOverflow question on How to verify CuDNN installation?](https://stackoverflow.com/questions/31326015/how-to-verify-cudnn-installation)
