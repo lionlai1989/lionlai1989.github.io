@@ -441,30 +441,38 @@ int main () {
 #include <stdio.h>
 
 typedef struct _engineer {
-    char *title;             /* ..00 */
-    int age;      // 4 bytes /* ..08 */
-    long salary;  // 8 bytes /* ..16 */
+    char *title;
+    int age;      // 4 bytes
+    long salary;  // 8 bytes
 } Engineer;
 
+typedef struct _designer {
+    char *title;
+    int age;      // 4 bytes
+    long salary;  // 8 bytes
+} __attribute__((packed)) Designer;
+
 typedef struct _manager {
-    char *title;             /* ..00 */
-    short age;   // 2 Bytes  /* ..08 */
-    int salary;  // 4 bytes  /* ..12 */
+    char *title;
+    short age;   // 2 Bytes
+    int salary;  // 4 bytes
 } Manager;
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct _sale {
-    char *title;            /* ..00 */
-    short age;   // 2 Bytes /* ..08 */
-    int salary;  // 4 bytes /* ..10 */
+    char *title;
+    short age;   // 2 Bytes
+    int salary;  // 4 bytes
 } Sale;
 #pragma pack(pop)
 
 int main () {
     Engineer e;
+    Designer d;
     Manager m;
     Sale s;
     printf("Size of Engineer is %lu. e.title: %p. e.age: %p. e.salary: %p\n", sizeof(e), &e.title, &e.age, &e.salary);
+    printf("Size of Designer is %lu. d.title: %p. d.age: %p. d.salary: %p\n", sizeof(d), &d.title, &d.age, &d.salary);
     printf("Size of Manager is %lu. m.title: %p. m.age: %p. m.salary: %p\n", sizeof(m), &m.title, &m.age, &m.salary);
     printf("Size of Sale is %lu. s.title: %p. s.age: %p. s.salary: %p\n", sizeof(s), &s.title, &s.age, &s.salary);
 
@@ -475,18 +483,23 @@ int main () {
 shows the following output:
 
 ```
-Size of Engineer is 24. e.title: 0x7ffc5cc97730. e.age: 0x7ffc5cc97738. e.salary: 0x7ffc5cc97740
-Size of Manager is 16. m.title: 0x7ffc5cc97720. m.age: 0x7ffc5cc97728. m.salary: 0x7ffc5cc9772c
-Size of Sale is 14. s.title: 0x7ffc5cc97712. s.age: 0x7ffc5cc9771a. s.salary: 0x7ffc5cc9771c
+Size of Engineer is 24. e.title: 0x7fffb0d4b660. e.age: 0x7fffb0d4b668. e.salary: 0x7fffb0d4b670
+Size of Designer is 20. d.title: 0x7fffb0d4b640. d.age: 0x7fffb0d4b648. d.salary: 0x7fffb0d4b64c
+Size of Manager is 16. m.title: 0x7fffb0d4b630. m.age: 0x7fffb0d4b638. m.salary: 0x7fffb0d4b63c
+Size of Sale is 14. s.title: 0x7fffb0d4b622. s.age: 0x7fffb0d4b62a. s.salary: 0x7fffb0d4b62c
 ```
 
 The observed differences in structure sizes are due to structure padding and alignment
 in C. Typically, structures are padded to align their members with the largest member's
-size (in byte). In all three cases, the biggest members are all 8 bytes (char \*). Thus
+size (in byte). In all four cases, the biggest members are all 8 bytes (char \*). Thus
 all elements will be padded according 8 bytes.
 
 -   `Engineer` Structure: To ensure salary is aligned on 8 bytes, 4 bytes of padding are
     added after `age`.
+-   `Designer` Structure: The `packed` attribute ensures that there is no padding
+    between structure members, potentially **reducing the overall size** of the
+    structure in memory. However, note that using this attribute may result in **slower
+    access times** for structure members due to the lack of alignment.
 -   `Manager` Structure: 2 bytes of padding are added after `age` so that the combined
     size of `age` and `salary` aligns on 8 bytes.
 -   `Sale` Structure: Padding is explicitly disabled within its scope using
