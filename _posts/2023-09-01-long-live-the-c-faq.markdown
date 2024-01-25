@@ -62,22 +62,30 @@ a 64-bit system, representing the size of a pointer.
 #include <stdio.h>
 
 int main() {
-    char s1[] = "helloworld";  // s1 is an `array` with a length of 11 bytes.
-    char *s2 = "helloworld";   // s2 is a non-const `pointer` pointing to a constant string literal.
+    char s1[] = "Helloworld";  // s1 is an `array` with a length of 11 bytes.
+    char *s2 = "Helloworld";   // s2 is a non-const `pointer` pointing to a constant string literal.
+    char s3[10] = "helloworld";// DO NOT EVER DO THIS. s3 is an `array` with a length of 10 bytes.
 
     printf("s1: %s. sizeof(s1): %ld\n", s1, sizeof(s1));
     printf("s2: %s. sizeof(s2): %ld\n", s2, sizeof(s2));
-    printf("The 0th character of s1 is %c %c\n", *s1, s1[0]);
-    printf("The 0th character of s2 is %c %c\n", *s2, s2[0]);
+    printf("s3: %s. sizeof(s3): %ld\n", s3, sizeof(s3));
+    printf("The 1st character of s1 is %c %c\n", *s1, s1[0]);
+    printf("The 1st character of s2 is %c %c\n", *s2, s2[0]);
+    printf("The 1st character of s3 is %c %c\n", *s3, s3[0]);
     printf("The 11th character of s1 is %c %d\n", *(s1+10), s1[10]);
     printf("The 11th character of s2 is %c %d\n", *(s2+10), s2[10]);
+    printf("The 11th character of s3 is %c %d\n", *(s3+10), s3[10]);
 
     printf("\nModify s1 ...\n");
-    s1[0] = 'H';   // Modifying the 0th character from 'h' to 'H'.
+    s1[0] = 'h';   // Modifying the 1st character from 'H' to 'h'.
     printf("s1: %s. sizeof(s1): %ld\n", s1, sizeof(s1));
 
+    printf("\nModify s3 ...\n");
+    s3[0] = 'H';   // Modifying the 1st character from 'h' to 'H'.
+    printf("s3: %s. sizeof(s3): %ld\n", s3, sizeof(s3));
+
     printf("\nModify s2 ...\n");
-    s2[0] = 'H';  // Attempting to change the 0th character leads to a segmentation fault.
+    s2[0] = 'H';  // Attempting to change the 1st character leads to a segmentation fault.
     printf("s2: %s. sizeof(s2): %ld\n", s2, sizeof(s2));
 }
 ```
@@ -85,25 +93,37 @@ int main() {
 The output is the following:
 
 ```
-s1: helloworld. sizeof(s1): 11
-s2: helloworld. sizeof(s2): 8
-The 0th character of s1 is h h
-The 0th character of s2 is h h
+s1: Helloworld. sizeof(s1): 11
+s2: Helloworld. sizeof(s2): 8
+s3: helloworldHelloworld. sizeof(s3): 10
+The 1st character of s1 is H H
+The 1st character of s2 is H H
+The 1st character of s3 is h h
 The 11th character of s1 is  0
 The 11th character of s2 is  0
+The 11th character of s3 is H 72
 
 Modify s1 ...
-s1: Helloworld. sizeof(s1): 11
+s1: helloworld. sizeof(s1): 11
+
+Modify s3 ...
+s3: Helloworldhelloworld. sizeof(s3): 10
 
 Modify s2 ...
 Segmentation fault (core dumped)
+
 ```
 
 There are few things to notice:
 
--   Printing characters from `s1` and `s2` is done similarly. Both `*` and `[]` can be
-    used to access elements in C-strings and arrays. However, it's crucial to recognize
-    that `s1` and `s2` are fundamentally two different entities.
+-   Printing characters from `s1`, `s2` and `s3` is done similarly. Both `*` and `[]`
+    can be used to access elements in C-strings and arrays. However, it's crucial to
+    recognize that `s1` and `s2` are fundamentally two different entities.
+
+-   The size of the array `s3` is specified as 10 bytes, but the string "helloworld"
+    requires 11 bytes (10 characters + null terminator \0). This will result in a buffer
+    overflow, causing undefined behavior and potentially leading to unexpected issues in
+    your program. **Don't ever do it.**
 
 -   Attempting to modify the contents of `s1` is permissible because `s1` is an array,
     and arrays in C are mutable. In contrast, attempting to modify `s2` leads to a
