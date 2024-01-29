@@ -121,7 +121,7 @@ sudo apt-get autoremove
 To remove libraries in `/usr/local/cuda*`:
 
 ```
-rm -r /usr/local/cuda*
+sudo rm -r /usr/local/cuda*
 ```
 
 ## Installing NVIDIA Driver
@@ -301,20 +301,20 @@ $ cd Downloads/
 $ tar -xvf cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz
 ```
 
--   Copy the following files into the CUDA toolkit directory.
+-   Copy the uncompressed files into the CUDA toolkit directory. There are two CUDA
+    folders after installing CUDA Toolkit, `/usr/local/cuda` and `/usr/local-12.1/cuda`,
+    on my laptop. The former is symbolically linked to the latter, as shown by the
+    following command:
+    ```
+    $ ll /usr/local/cuda
+    lrwxrwxrwx 1 root root 21 Jan 29 06:32 /usr/local/cuda -> /usr/local/cuda-12.1//
+    ```
 
 ```shell
-sudo cp cudnn-linux-x86_64-8.9.7.29_cuda12-archive/include/cudnn*.h /usr/local/cuda/include
 sudo cp cudnn-linux-x86_64-8.9.7.29_cuda12-archive/include/cudnn*.h /usr/local/cuda-12.1/include
-sudo cp -P cudnn-linux-x86_64-8.9.7.29_cuda12-archive/lib/libcudnn* /usr/local/cuda/lib64/
 sudo cp -P cudnn-linux-x86_64-8.9.7.29_cuda12-archive/lib/libcudnn* /usr/local/cuda-12.1/lib64
-sudo chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
 sudo chmod a+r /usr/local/cuda-12.1/include/cudnn*.h /usr/local/cuda-12.1/lib64/libcudnn*
 ```
-
-There are two CUDA folders after installing CUDA Toolkit, `usr/local/cuda` and
-`usr/local-12.1/cuda`, on my laptop. I don't really know why. Thus, I copy every files
-to both of the folders.
 
 -   Verify the installation by following
     [this StackOverflow question](https://stackoverflow.com/questions/31326015/how-to-verify-cudnn-installation).
@@ -504,3 +504,12 @@ _otherwise, it won't work._
 tbd
 
 [PyTorch's dockerhub](https://hub.docker.com/r/pytorch/pytorch/tags)
+
+# Frequently Asked Questions
+
+-   After updating Linux kernel and system packages, it may shows the error:
+    ```
+    $ nvidia-smi
+    NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver. Make sure that the latest NVIDIA driver is installed and running.
+    ```
+    The solution is to reinstall NVIDIA driver and CUDA Toolkit.
