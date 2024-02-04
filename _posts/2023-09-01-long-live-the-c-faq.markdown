@@ -45,18 +45,24 @@ int binary_search(int arr[], int size, int target) {
 This page records all the C-related notes, frequently asked questions and prgramming
 assignments I've encountered over the years.
 
+## Variable-Length Array (VLA) in C and C++
+
+Read https://zakuarbor.github.io/blog/variable-len-arr/
+
 ## Array of Characters and String Literal
 
-Understanding the nuances between _character arrays_ and _string literals_ in C is
-essential for writing robust and error-free code. In the given code snippet, I dive into
-the distinctions between `s1` and `s2`.
-
-Here, `s1` is an **array** (not a pointer) of characters containing the sequence
-"helloworld\0". The size of `s1` is determined by the number of characters in the
-initializer, resulting in `sizeof(s1)` being 11 bytes. On the other hand, `s2` is a
-**non-const pointer** pointing to the first character of the constant string literal
+`s1` is an **array** (not a pointer) of characters (_character arrays_) containing the
+sequence "helloworld\0". The size of `s1` is determined by the number of characters in
+the initializer, resulting in `sizeof(s1)` being 11 bytes. On the other hand, `s2` is a
+**non-const pointer** pointing to the first character of the constant _string literals_
 "helloworld\0" which is stored in read-only memory in C. The size of `s2` is 8 bytes on
-a 64-bit system, representing the size of a pointer.
+a 64-bit system, representing the size of a pointer. `s3` is an array of characters with
+a specified size of 10 bytes. The initializer "helloworld" contains 10 characters plus
+the null terminator '\0', making it a total of 11 characters. Since `s3` is declared
+with a size of 10 bytes, it is not large enough to accommodate the null terminator,
+resulting in a potential buffer overflow. This code _might compile without any errors_,
+but it is a source of
+[**undefined behavior**](https://stackoverflow.com/questions/70798021/is-it-legal-to-read-into-an-array-that-doesnt-have-space-for-the-null-terminato?rq=3).
 
 ```c
 #include <stdio.h>
