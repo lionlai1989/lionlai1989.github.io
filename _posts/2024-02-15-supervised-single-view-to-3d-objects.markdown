@@ -162,20 +162,27 @@ During the training phase, the data loader randomly selects one view for the inp
 important observation is that all meshes' vertices are positioned close to the origin,
 with their centers very near to `(0, 0, 0)` and scales within `[-1, 1]`.
 
-# Model building
+# Building a Model to Predict 3D Shape from a Single 2D Image
 
-now we are ready to build the model for processing point cloud.
+Now, we are ready to build a model which can predict an object's 3D shape from a single
+2D image.
 
-## defining loss for the point clouds.
+## Calculating Loss Between Point Clouds
 
-To calculate the loss between two pointclouds, the chamfer distance is usually used.
-here is the equation. The Chamfer distance between point cloud is defined as:
+To evaluate the accuracy of our model's predictions against the ground truth, we use the
+Chamfer distance for loss calculation between two point clouds. The Chamfer distance is
+defined as:
 
 $$
 d_{\text{CD}}(S_1, S_2) = \frac{1}{|S_1|} \sum_{x \in S_1} \min_{y \in S_2} \|x - y\|^2 + \frac{1}{|S_2|} \sum_{y \in S_2} \min_{x \in S_1} \|x - y\|^2
 $$
 
-which is implemented as following with the help of `knn_points` from PyTorch3D.
+The Chamfer distance calculates the mean squared distance between each point in one
+cloud to its nearest neighbor in the other cloud, and vice versa, effectively measuring
+the overall **similarity** between the two shapes.
+
+With the help of `knn_points` from PyTorch3D, I implement the Chamfer distance as
+follow:
 
 ```python
 def chamfer_loss(point_cloud_src, point_cloud_tgt):
@@ -187,18 +194,18 @@ def chamfer_loss(point_cloud_src, point_cloud_tgt):
     tgt_dists, _, _ = knn_points(point_cloud_tgt, point_cloud_src, K=k)
     # src_dists, tgt_dists: (batch, n_points, k)
 
-    return src_dists.mean() + tgt_dists.mean()  # Calculate the mean distance.
+    return (src_dists.mean() + tgt_dists.mean()) / 2  # Calculate the mean distance.
 ```
 
-## fitting 3d point clouds with torch tensor.
+## Fitting a target 3D Point Cloud with a Random Point Cloud
 
-one way to verify if the loss function is correct is that we can fit a random point
-cloud with the model using our loss function. the simplified code looks like the
-following:
+To validate the correct implementation of `chamfer_loss`, we can fit a random point
+cloud to the target point cloud using `chamfer_loss`. Below is a simplified Python
+script showing this process:
 
 ```python
 n_points = 10000
-pointclouds_source = torch.randn([1, n_points, 3], requires_grad=True, device="cuda")
+pointclouds_source = torch.randn([1, n_points, 3], requires_grad=True)
 optimizer = torch.optim.Adam([pointclouds_source], lr=1e-4)
 
 for step in range(0, 50000):
@@ -208,7 +215,9 @@ for step in range(0, 50000):
     optimizer.step()
 ```
 
-Here is how the output looks like:
+The following visualizations showcase the progressive alignment of the random point
+cloud towards the ground truth, as facilitated by minimizing the Chamfer distance
+through gradient descent:
 
 <table>
   <tr>
@@ -227,36 +236,37 @@ Here is how the output looks like:
 
 ## Defining `PointModel`
 
-`PointModel` inherits from `torch.nn.Module`. It builds the overall architecure of the
-model. It consists of two parts, an encoder and a decoder:
+The `PointModel` class, derived from `torch.nn.Module`, forms the backbone of our
+architecture, designed to transform 2D images into 3D point clouds. It is composed of
+two primary parts:
 
 1. **2D Encoder**: Transforms an image into a latent representation, capturing the
    essential features required for 3D reconstruction. I use resnet modoel from
    `torchvision.models`.
 2. **3D Decoder**: Converts the latent representation into a discrete 3D point clouds,
-   where each point represents the location in the 3d world.
+   where each point represents the location in the 3D world.
 
-here is what my model looks like:
+Below is the implementation of the `PointModel`:
 
 ```python
 class PointModel(nn.Module):
     def __init__(self, arch, n_points):
         super(PointModel, self).__init__()
-        self.device = args.device
+
         vision_model = torchvision_models.__dict__[arch](pretrained=True)
         self.encoder = torch.nn.Sequential(*(list(vision_model.children())[:-1]))
         self.normalize = transforms.Normalize(
             mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
         )
 
-        # Encoder output (batch, 512) if resnet18
-        #
-        # Input: b x 512
-        # Output: b x n_points x 3
-
         self.n_point = n_points
+
+        encoder_out_size = 512
+        # Encoder output: (batch, encoder_out_size)
+        # Decoder output: (batch, n_points * 3)
+
         self.decoder = torch.nn.Sequential(
-            torch.nn.Linear(512, 1024),
+            torch.nn.Linear(encoder_out_size, 1024),
             torch.nn.ReLU(),
             torch.nn.Linear(1024, 2048),
             torch.nn.ReLU(),
@@ -266,147 +276,16 @@ class PointModel(nn.Module):
 
     def forward(self, images, args):
         images_normalize = self.normalize(images.permute(0, 3, 1, 2))
-        encoded_feat = self.encoder(images_normalize).squeeze(-1).squeeze(-1)  # b x 512
+        encoded_feat = self.encoder(images_normalize).squeeze(-1).squeeze(-1)  # (batch, encoder_out_size)
         pointclouds_pred = self.decoder(encoded_feat)
         return pointclouds_pred.view(-1, self.n_point, 3)
 ```
 
-# evaluation metric
+A few important aspects to note:
 
-given a predicted point cloud and a ground truth point cloud. how can i calculate the
-evaluation metric. for example, how can i know the precision, recall and f1? my idea is
-for each point in predicted point cloud, I first found the closest ground truth and
-their distance, if this distance is smaller than a threshold, then I say this point in
-predicted point cloud is a true positive. Does it make sense?
-
-Your idea for calculating precision, recall, and F1 score for evaluating a predicted 3D
-point cloud against a ground truth point cloud by using a distance threshold to
-determine true positives makes sense and is a practical approach in the context of 3D
-point clouds. This method is somewhat analogous to object detection metrics in 2D image
-processing, where predictions are compared to ground truth data to determine true
-positives, false positives, and false negatives. Here's how you can conceptualize and
-implement these calculations:
-
-### Definitions
-
--   **True Positive (TP):** A point in the predicted point cloud that is within a
-    specified distance threshold of any point in the ground truth point cloud.
--   **False Positive (FP):** A point in the predicted point cloud that is not within the
-    threshold distance of any point in the ground truth point cloud.
--   **False Negative (FN):** A point in the ground truth point cloud that is not within
-    the threshold distance of any point in the predicted point cloud.
-
-### Calculating Precision, Recall, and F1 Score
-
--   **Precision** measures the proportion of predicted points that are true positives
-    out of all points predicted.
--   **Recall** measures the proportion of true positives out of the points in the ground
-    truth point cloud.
--   **F1 Score** is the harmonic mean of precision and recall, providing a balance
-    between them.
-
-### Implementation Steps
-
-1. **Determine TP, FP, and FN:**
-
-    - For each point in the predicted point cloud, find the closest point in the ground
-      truth point cloud. If the distance is less than the threshold, count it as TP;
-      otherwise, it's FP.
-    - For each point in the ground truth point cloud, find if there's a corresponding TP
-      in the predicted point cloud (within the threshold). If not, it's an FN.
-
-2. **Calculate Precision and Recall:**
-
-    - Precision = TP / (TP + FP)
-    - Recall = TP / (TP + FN)
-
-3. **Calculate F1 Score:**
-    - F1 Score = 2 _ (Precision _ Recall) / (Precision + Recall)
-
-### Code Example
-
-Here's a simplified example assuming you have distance functions and your point clouds
-are in PyTorch tensors:
-
-```python
-import torch
-from pytorch3d.ops import knn_points
-
-def calculate_metrics(pred_cloud, gt_cloud, threshold=0.1):
-    # Find closest points and distances from predicted to ground truth
-    knn_result = knn_points(pred_cloud.unsqueeze(0), gt_cloud.unsqueeze(0), K=1)
-    distances_pred_to_gt = knn_result.dists.squeeze(0)  # Batch size of 1
-    tp_fp_mask = distances_pred_to_gt < threshold**2  # True for TP+FP, squared threshold for squared distances
-
-    # True Positives + False Positives
-    tp_plus_fp = tp_fp_mask.sum().item()
-
-    # False Negatives
-    knn_result_gt_to_pred = knn_points(gt_cloud.unsqueeze(0), pred_cloud.unsqueeze(0), K=1)
-    distances_gt_to_pred = knn_result_gt_to_pred.dists.squeeze(0)
-    fn_mask = distances_gt_to_pred >= threshold**2  # True for FN
-    fn = fn_mask.sum().item()
-
-    # True Positives
-    tp = tp_plus_fp  # Assuming each TP in pred has a unique closest point in GT
-
-    # Precision, Recall, and F1
-    precision = tp / (tp_plus_fp) if tp_plus_fp > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
-
-    return precision, recall, f1_score
-```
-
-### Notes
-
--   This approach assumes a one-to-one mapping for TP determination. Depending on your
-    application, you might adjust how TPs, FPs, and FNs are counted, especially if the
-    density of points or the distribution of points in space significantly differs
-    between the predicted and ground truth point clouds.
--   The use of a squared threshold for distance comparisons is a minor optimization to
-    avoid unnecessary square root calculations since `knn_points` returns squared
-    distances by default. Adjust the threshold according to your specific needs and
-    distance metric.
-
-**references:**
-
-sphere mesh to dolphin mesh
-https://pytorch3d.org/tutorials/deform_source_mesh_to_target_mesh
-
--   "Depth Map Prediction from a Single Image using a Multi-Scale Deep Network"
--   "Towards Robust Monocular Depth Estimation: Mixing Datasets for Zero-shot
-    Cross-dataset Transfer"
--   "Learning a predictable and generative vector representation for objects"
--   "Occupancy Networks: Learning 3D Reconstruction in Function Space"
--   "AtlasNet: A Papier-Mâché Approach to Learning 3D Surface Generation"
--   "Pixel2Mesh: Generating 3D Mesh Models from Single RGB Images"
-
-be carefor of this imageio error:
-
-```
-TypeError: Cannot handle this data type: (1, 1, 3), <f4
-```
-
-https://developer.nvidia.com/blog/how-optimize-data-transfers-cuda-cc/
-
-<!--
-Scale and Shift Invariant Objectives: As you correctly noted, depth estimation from a
-single image suffers from scale and depth ambiguity. To mitigate this, researchers have
-proposed scale-invariant loss functions for training deep learning models. These loss
-functions are designed to minimize the relative error in depth prediction rather than
-the absolute error, which helps the model learn to predict depth up to a scale factor.
-This approach aligns with how humans perceive depth—relative to other objects rather
-than in absolute terms.
-
-Inverse Depth Representation: Some methods represent depth in terms of inverse depth
-(disparity) rather than absolute depth. This representation naturally emphasizes closer
-objects (which have higher disparity values) and can be more robust to the scale
-ambiguity problem. Loss functions based on disparity can be designed to be scale and
-shift invariant, improving the robustness of depth predictions.
-
-Incorporating Additional Constraints: Other approaches to single-view depth estimation
-incorporate additional constraints or information, such as known object sizes, geometric
-models of the scene, or semantic information about the scene (e.g., sky is far, cars are
-at a certain range on the road). These methods use a combination of cues and assumptions
-to refine depth predictions. -->
+-   The output size of the encoder varies depending on whether a `resnet18` or
+    `resnet34` (512-vector) or a `resnet50` (2048-vector) is used.
+-   I use the hyperbolic tangent (`Tanh()`) activation function in the final layer to
+    ensure that every output point is constrained within the `[-1, 1]` range. I mention
+    that the vertices of the mesh are within the `[-1, 1]` range in the previous
+    section.
