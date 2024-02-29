@@ -241,7 +241,7 @@ architecture, designed to transform 2D images into 3D point clouds. It is compos
 two primary parts:
 
 1. **2D Encoder**: Transforms an image into a latent representation, capturing the
-   essential features required for 3D reconstruction. I use resnet modoel from
+   essential features required for 3D reconstruction. I use a ResNet modoel from
    `torchvision.models`.
 2. **3D Decoder**: Converts the latent representation into a discrete 3D point clouds,
    where each point represents the location in the 3D world.
