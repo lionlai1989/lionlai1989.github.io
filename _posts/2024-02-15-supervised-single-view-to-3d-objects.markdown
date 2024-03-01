@@ -289,3 +289,47 @@ A few important aspects to note:
     ensure that every output point is constrained within the `[-1, 1]` range. I mention
     that the vertices of the mesh are within the `[-1, 1]` range in the previous
     section.
+
+# Evaluation Metrics
+
+Given a point in the predicted point cloud, we calculate the distance between this point
+and its nearest point in the ground truth point cloud. If the distance falls below a
+predefined threshold, then we consider this point as a true positive. The criteria for
+categorizing points are as follows:
+
+-   **True Positive (TP):** A point in the predicted point cloud that **is** within a
+    specified distance threshold of any point in the ground truth point cloud.
+-   **False Positive (FP):** A point in the predicted point cloud that **is not** within
+    the threshold distance of any point in the ground truth point cloud.
+-   **False Negative (FN):** A point in the ground truth point cloud that **is not**
+    within the threshold distance of any point in the predicted point cloud.
+
+<p align="center">
+<img alt="camera" src="/assets/images/2024-02-15/precision_recall.png" width="30%">
+<br> The image is adapted from Precision and Recall (Wikipedia).
+</p>
+
+The definitions of precision and recall are as follows:
+
+-   **Precision** measures the proportion of predicted points that are true positives
+    out of all points predicted. $\text{Precision} = TP/(TP+FP)$
+-   **Recall** measures the proportion of true positives out of the points in the ground
+    truth point cloud. $\text{Recall} = TP/(TP+FN)$
+-   **F1 Score** is the harmonic mean of precision and recall, providing a balance
+    between them. $\text{F1 Score} = 2 * Precision * Recall / (Precision + Recall)$
+
+# Running Code Yourself
+
+The source code can be found
+[here](https://github.com/lionlai1989/Learning-3D-Computer-Vision).
+
+**Acknowledgment:** This post has been inspired by the content from the
+course ["Learning for 3D Vision"](https://learning3d.github.io/index.html) taught by
+Shubham Tulsiani at Carnegie Mellon University.
+
+**References:**
+
+-   [A Point Set Generation Network for 3D Object Reconstruction from a Single Image](https://arxiv.org/abs/1612.00603)
+-   [How to Optimize Data Transfers in CUDA C/C++](https://developer.nvidia.com/blog/how-optimize-data-transfers-cuda-cc/)
+-   [TypeError: Cannot handle this data type: (1, 1, 3), <f4](https://stackoverflow.com/questions/60138697/typeerror-cannot-handle-this-data-type-1-1-3-f4)
+-   [Deform a source mesh to form a target mesh using 3D loss functions](https://pytorch3d.org/tutorials/deform_source_mesh_to_target_mesh)
