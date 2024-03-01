@@ -8,8 +8,6 @@ wip: true
 date: 2024-02-15
 ---
 
-Work in progress.
-
 3D reconstruction from a single view is very similar to the process through which we
 recognize objects in the real world. When we look at a chair from one angle, we know it
 is a chair and can intuitively _imagine_ what it would look like from other angles. It's
@@ -318,14 +316,71 @@ The definitions of precision and recall are as follows:
 -   **F1 Score** is the harmonic mean of precision and recall, providing a balance
     between them. $\text{F1 Score} = 2 * Precision * Recall / (Precision + Recall)$
 
+# Experimentation Results: Single View 2D Images to 3D Point Clouds
+
+Work in progress.
+
+Preliminary experiments show the model can deduce 3D structures from single 2D images
+effectively. After using 10,000 points and conducting 100 epochs of training, the result
+is shown below.
+
+**Visual Results**
+
+<div style="display:flex; justify-content:center;">
+    <div style="text-align: center;">
+        <img src="/assets/images/2024-02-15/evaluation/pc_gt_400.gif"
+        alt=""
+        style="margin: auto; width: 75%;">
+        <br>Ground truth point cloud.
+        <i></i>
+    </div>
+    <div style="text-align: center;">
+        <img src="/assets/images/2024-02-15/evaluation/image_400.png"
+        alt=""
+        style="margin: auto; width: 200%;">
+        <br>Single view image.
+        <i></i>
+    </div>
+    <div style="text-align: center; margin-bottom: 10px">
+        <img src="/assets/images/2024-02-15/evaluation/pc_eval_400.gif"
+        alt=""
+        style="margin: auto; width: 75%;">
+        <br>Predicted point cloud.
+        <i></i>
+    </div>
+</div>
+
+It's important to keep the number of points between the ground truth and the predicted
+point clouds the same.
+
+**Qualitative Analysis**
+
+I use F1-scores to qualitatively assess the point cloud predictions, using threshold
+values of 0.01, 0.02, 0.03, 0.04, and 0.05. These thresholds were empirically
+determined, considering the spatial range of vertices in the ground truth 3D shapes is
+`[-1, 1]`. A balance is necessary, as too large a threshold could misleadingly suggest
+higher accuracy, while too small a threshold might unfairly penalize the model's
+performance. Therefore, maintaining consistent threshold values is crucial for
+comparability across different datasets and experiments.
+
+<div style="display:flex; justify-content:center;">
+    <div style="text-align: center;">
+        <img src="/assets/images/2024-02-15/evaluation/eval_point.png"
+        alt=""
+        style="margin: auto; width: 100%;">
+        <br>F1-scores across different threshold values.
+        <i></i>
+    </div>
+</div>
+
 # Running Code Yourself
 
 The source code can be found
 [here](https://github.com/lionlai1989/Learning-3D-Computer-Vision).
 
-**Acknowledgment:** This post has been inspired by the content from the
-course ["Learning for 3D Vision"](https://learning3d.github.io/index.html) taught by
-Shubham Tulsiani at Carnegie Mellon University.
+**Acknowledgment:** This post has been inspired by the content from the course
+["Learning for 3D Vision"](https://learning3d.github.io/index.html) taught by Shubham
+Tulsiani at Carnegie Mellon University.
 
 **References:**
 
