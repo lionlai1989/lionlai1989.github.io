@@ -318,8 +318,6 @@ The definitions of precision and recall are as follows:
 
 # Experimentation Results: Single View 2D Images to 3D Point Clouds
 
-Work in progress.
-
 Preliminary experiments show the model can deduce 3D structures from single 2D images
 effectively. After using 10,000 points and conducting 100 epochs of training, the result
 is shown below.
@@ -376,7 +374,10 @@ comparability across different datasets and experiments.
 # Running Code Yourself
 
 The source code can be found
-[here](https://github.com/lionlai1989/Learning-3D-Computer-Vision).
+[here](https://github.com/lionlai1989/Learning-3D-Computer-Vision). Please first
+download the dataset `r2n2_shapenet_dataset 2.zip` from
+[here](https://drive.google.com/file/d/1fRaJevvaW_B_ZLb67dqARzJvk7gYGMbG/view) and
+uncompress the zip file.
 
 **Acknowledgment:** This post has been inspired by the content from the course
 ["Learning for 3D Vision"](https://learning3d.github.io/index.html) taught by Shubham
