@@ -40,11 +40,6 @@ implementing it using PyTorch from the ground up by following [1].
 -   [1]
     [NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis](https://arxiv.org/abs/2003.08934)
 
-https://yconquesty.github.io/blog/ml/nerf/nerf_ndc.html
-
-<!--
-https://dtransposed.github.io/blog/2022/08/06/NeRF/ -->
-
 # Introduction
 
 Neural Radiance Fields (NeRF) use a Multilayer Perceptron (MLP) network, represented by
