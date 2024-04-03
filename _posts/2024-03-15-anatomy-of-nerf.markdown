@@ -40,6 +40,11 @@ implementing it using PyTorch from the ground up by following [1].
 -   [1]
     [NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis](https://arxiv.org/abs/2003.08934)
 
+https://yconquesty.github.io/blog/ml/nerf/nerf_ndc.html
+
+<!--
+https://dtransposed.github.io/blog/2022/08/06/NeRF/ -->
+
 # Introduction
 
 Neural Radiance Fields (NeRF) use a Multilayer Perceptron (MLP) network, represented by
@@ -458,7 +463,7 @@ shown below:
     <p style="margin-bottom: 20px;">Inferencing with continuous viewing directions.</p>
     <div style="display:flex; justify-content:center;">
         <div style="text-align: center;">
-            <img src="/assets/images/2024-03-15/exp_output/fern_epoch_00100.gif"
+            <img src="/assets/images/2024-03-15/exp_output/fern_epoch_02000.gif"
             alt=""
             style="margin: auto; height: 256px; object-fit: contain;">
             <br>Fern
@@ -472,7 +477,7 @@ shown below:
             <i></i>
         </div>
         <div style="text-align: center; margin-bottom: 10px">
-            <img src="/assets/images/2024-03-15/exp_output/materials_epoch_00050.gif"
+            <img src="/assets/images/2024-03-15/exp_output/materials_epoch_00300.gif"
             alt=""
             style="margin: auto; height: 256px; object-fit: contain;">
             <br>Materials
@@ -481,9 +486,26 @@ shown below:
     </div>
 </div>
 
-**Discussion:** The prelimenay result shows that the 3D model can be extracted from the
-trained NeRF model but the rendering result looks vague comparing to the training
-images. The reason could be that I haven't incorporated the heiarchical volume sampling.
+**Discussion:**
+
+The initial results show that although it is feasible to extract a 3D model from the
+trained NeRF model, the rendering quality appears notably less sharp compared to the
+original training images. Here are several plausible explanations:
+
+1. **Lack of Hierarchical Volume Sampling**: The absence of hierarchical volume sampling
+   in my approach may result in insufficient resolution of detail.
+
+2. **Limited Training Duration**: According to [1], optimal training of a NeRF model for
+   each scene requires 1-2 days. In contrast, my models have been trained for merely a
+   few hours (less than 10). Additionally, it appears that the training cost can
+   continue to decrease, albeit at a very slow pace, if I were to continue training.
+
+3. **Constraints on Position and Viewing Direction**: I observed that deviations in the
+   camera's position and viewing direction from those of the original training images
+   affect rendering quality.
+
+4. **Dataset Limitations**: The parts of the rendered scene not covered by the training
+   images, such as the area surrounding the fern, exhibit noise.
 
 # Running Code Yourself
 
