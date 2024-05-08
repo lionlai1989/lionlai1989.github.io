@@ -126,9 +126,94 @@ sudo rm -r /usr/local/cuda*
 
 ## Installing NVIDIA Driver
 
-Interestingly, it appears to me that manual installation of the NVIDIA Driver may not be
-necessary. When I utilized the runfile (local) method to install the CUDA Toolkit, the
-NVIDIA Driver was automatically installed along the way.
+Interestingly, it might seem like manually installing the NVIDIA Driver isn't always
+necessary. For example, when using the runfile (local) method to install the CUDA
+Toolkit, a specific version of the NVIDIA Driver, bundled with the runfile, gets
+installed automatically.
+
+However, there are scenarios where manual installation of the NVIDIA Driver becomes
+essential. This is particularly true for newer NVIDIA GPU models, which may require the
+latest driver versions not included in the older CUDA Toolkit. For instance, the CUDA
+Toolkit version `cuda_12.1.1_530.30.02_linux.run` includes the NVIDIA Driver
+`530.30.02`. This version can be too outdated for newer GPU models.
+
+In such cases, it's necessary to install a specific version of the NVIDIA Driver
+independently from the CUDA Toolkit. In this section, I'll guide you through the process
+of installing the NVIDIA Driver on its own, ensuring compatibility with the latest GPU
+models. This guide is intended to help future users, including my future self, navigate
+this setup.
+
+### Installing NVIDIA Driver on Virtual Machines of Google Compute Engine (GCE)
+
+This section demonstrates how to install the NVIDIA driver on a clean Ubuntu virtual
+machine (Ubuntu 22.04) hosted on GCE. Please carefully follow the steps below:
+
+-   **Step 1:** Begin by thoroughly reading
+    [the official installation guide provided by GCE](https://cloud.google.com/compute/docs/gpus/install-drivers-gpu).
+    This guide covers crucial details essential for a successful installation, such as
+    [determining the minimum supported version of NVIDIA drivers for each GPU type](https://cloud.google.com/compute/docs/gpus/install-drivers-gpu#minimum-driver)
+    and
+    [using the installation script to install the NVIDIA driver](https://cloud.google.com/compute/docs/gpus/install-drivers-gpu#install-script).
+    It's important to note that although
+    [this section](https://cloud.google.com/compute/docs/gpus/install-drivers-gpu#no-secure-boot)
+    suggests that the NVIDIA driver can be installed alongside the CUDA Toolkit, I
+    recommend installing the driver separately to ensure compatibility, especially when
+    the pre-packaged driver version in the CUDA Toolkit might not meet the specific
+    requirements of your hardware.
+
+    After checking out Step 1, you should have pinned down the right version of the
+    NVIDIA driver for your hardware. If you haven't, take another crack at it—sometimes
+    it just takes a bit more digging to land on the correct driver version. Moving
+    forward, we'll be using the version `535.104.05` and following the approach laid out
+    in
+    [this installation script provided by GCE](https://github.com/GoogleCloudPlatform/compute-gpu-installation/blob/main/linux/install_gpu_driver.py).
+
+-   **Step 2:** Start by updating and upgrading your system packages.
+
+    ```shell
+    sudo apt update && sudo apt upgrade -y
+    ```
+
+    Next, install the kernel headers and development packages for the currently running
+    kernel:
+
+    ```shell
+    sudo apt install linux-headers-$(uname -r)
+    ```
+
+-   **Step 3:** Install required system packages.
+
+    ```shell
+    sudo apt install -y software-properties-common \
+    pciutils \
+    make \
+    dkms \
+    gcc-12 \
+    g++-12
+    ```
+
+    A crucial step here is to set `gcc-12` and `g++-12` as the default compilers. This
+    ensures they are used when installing the NVIDIA driver.
+
+    ```shell
+    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 \
+    --slave /usr/bin/g++ g++ /usr/bin/g++-12 \
+    --slave /usr/bin/gcov gcov /usr/bin/gcov-12
+    ```
+
+-   **Step 4:** Download and install the NVIDIA driver.
+
+    ```shell
+    curl -fSsl -O https://us.download.nvidia.com/tesla/535.104.05/NVIDIA-Linux-x86_64-535.104.05.run
+    sudo sh NVIDIA-Linux-x86_64-535.104.05.run -s --dkms --no-cc-version-check
+    ```
+
+    If you encounter any errors or failures during installation, please refer to this
+    [installation function](https://github.com/GoogleCloudPlatform/compute-gpu-installation/blob/7d1f09e414be69ece62a8024d42eba7cf90752f5/linux/install_gpu_driver.py#L365).
+    You may find salvation in it.
+
+    After successfully installing the NVIDIA driver, the next step is to install the
+    CUDA Toolkit.
 
 ## Installing CUDA Toolkit
 
@@ -148,6 +233,11 @@ install version 12.1. To achieve this, I will navigate to the
 [CUDA Toolkit Archive](https://developer.nvidia.com/cuda-toolkit-archive) and select the
 version of `CUDA Toolkit 12.1`. Following the selection of CPU architecture, OS, and
 distribution, I will opt for the `runfile (local)` installation method.
+
+**Notice:** Please exercise caution with this method when installing the CUDA Toolkit.
+_If you have already installed an NVIDIA driver as described in the previous section,
+**DO NOT** select the option to install the NVIDIA driver that is bundled with the CUDA
+Toolkit._ This could lead to conflicts with the driver already installed on your system.
 
 ```shell
 wget https://developer.download.nvidia.com/compute/cuda/12.1.1/local_installers/cuda_12.1.1_530.30.02_linux.run
