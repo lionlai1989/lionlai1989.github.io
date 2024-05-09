@@ -201,6 +201,10 @@ machine (Ubuntu 22.04) hosted on GCE. Please carefully follow the steps below:
     --slave /usr/bin/gcov gcov /usr/bin/gcov-12
     ```
 
+    To learn more about changing the default GCC/G++ compiler in Ubuntu, you might want
+    to read through
+    [this Stack Overflow question](https://stackoverflow.com/questions/7832892/how-to-change-the-default-gcc-compiler-in-ubuntu).
+
 -   **Step 4:** Download and install the NVIDIA driver.
 
     ```shell
