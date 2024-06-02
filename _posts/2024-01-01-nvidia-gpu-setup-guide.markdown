@@ -38,7 +38,7 @@ The objectives of this post are as follows:
     -   Command-line shell
     -   Visual Studio Code, ensuring it recognizes the environment.
 
-I use Ubuntu 20.04, and my GPU is the `NVIDIA RTX A3000 Laptop GPU`, equipped with 4096
+I use Ubuntu 22.04, and my GPU is the `NVIDIA RTX A3000 Laptop GPU`, equipped with 4096
 CUDA cores and 6144 MB of memory. The current CUDA version is as follows:
 
 ```
@@ -100,7 +100,7 @@ Here are the links that might be helpful:
 To remove CUDA Toolkit:
 
 ```shell
-sudo apt-get --purge remove "*cuda*" "*cublas*" "*cufft*" "*cufile*" "*curand*" "*cusolver*" "*cusparse*" "*gds-tools*" "*npp*" "*nvjpeg*" "nsight*" "*nvvm*"
+sudo apt --purge remove "*cuda*" "*cublas*" "*cufft*" "*cufile*" "*curand*" "*cusolver*" "*cusparse*" "*gds-tools*" "*npp*" "*nvjpeg*" "nsight*" "*nvvm*"
 sudo /usr/local/cuda-12.1/bin/cuda-uninstaller
 ```
 
@@ -109,13 +109,13 @@ To remove NVIDIA Drivers:
 ```shell
 sudo /usr/bin/nvidia-uninstall
 sudo apt clean; sudo apt update; sudo apt purge cuda; sudo apt purge nvidia-*; sudo apt autoremove;
-sudo apt-get --purge remove "*nvidia*" "libxnvctrl*"
+sudo apt --purge remove "*nvidia*" "libxnvctrl*"
 ```
 
 To clean up the uninstall:
 
 ```
-sudo apt-get autoremove
+sudo apt autoremove
 ```
 
 To remove libraries in `/usr/local/cuda*`:
@@ -197,8 +197,13 @@ machine (Ubuntu 22.04) hosted on GCE. Please carefully follow the steps below:
 
     ```shell
     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100 \
-    --slave /usr/bin/g++ g++ /usr/bin/g++-12 \
-    --slave /usr/bin/gcov gcov /usr/bin/gcov-12
+    --slave /usr/bin/g++               g++ /usr/bin/g++-12 \
+    --slave /usr/bin/gcc-ar         gcc-ar /usr/bin/gcc-ar-12 \
+    --slave /usr/bin/gcc-nm         gcc-nm /usr/bin/gcc-nm-12 \
+    --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-12 \
+    --slave /usr/bin/gcov             gcov /usr/bin/gcov-12 \
+    --slave /usr/bin/gcov-dump   gcov-dump /usr/bin/gcov-dump-12 \
+    --slave /usr/bin/gcov-tool   gcov-tool /usr/bin/gcov-tool-12
     ```
 
     To learn more about changing the default GCC/G++ compiler in Ubuntu, you might want
@@ -593,17 +598,75 @@ PyTorch (not above PyTorch 2.1), as documented in the
 file. Essentially, all versions of every software must be compatible with each other;
 _otherwise, it won't work._
 
-# Using Docker
+# Running GPU Programs within a Docker Container
 
-tbd
+-   **Step 1:** First, read through the
+    [NVIDIA Container Toolkit GitHub repository](https://github.com/NVIDIA/nvidia-container-toolkit). 
+    Then, follow the detailed instructions on the
+    [NVIDIA Container Toolkit documentation page](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html)
+    to install the NVIDIA Container Toolkit. This toolkit enables Docker containers to 
+    access the NVIDIA GPU on your host machine.
 
-[PyTorch's dockerhub](https://hub.docker.com/r/pytorch/pytorch/tags)
+-   **Step 2:** After installing the NVIDIA Container Toolkit, verify the installation 
+    by running the following command:
+
+    ```
+    ~$ sudo docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi
+    Unable to find image 'ubuntu:latest' locally
+    latest: Pulling from library/ubuntu
+    49b384cc7b4a: Pull complete 
+    Digest: sha256:3f85b7caad41a95462cf5b787d8a04604c8262cdcdf9a472b8c52ef83375fe15
+    Status: Downloaded newer image for ubuntu:latest
+    Sun Jun  2 08:18:02 2024       
+    +---------------------------------------------------------------------------------------+
+    | NVIDIA-SMI 535.171.04             Driver Version: 535.171.04   CUDA Version: 12.2     |
+    |-----------------------------------------+----------------------+----------------------+
+    | GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+    | Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+    |                                         |                      |               MIG M. |
+    |=========================================+======================+======================|
+    |   0  NVIDIA RTX A3000 Laptop GPU    Off | 00000000:01:00.0 Off |                  N/A |
+    | N/A   44C    P0              19W /  60W |      8MiB /  6144MiB |      0%      Default |
+    |                                         |                      |                  N/A |
+    +-----------------------------------------+----------------------+----------------------+
+                                                                                            
+    +---------------------------------------------------------------------------------------+
+    | Processes:                                                                            |
+    |  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+    |        ID   ID                                                             Usage      |
+    |=======================================================================================|
+    +---------------------------------------------------------------------------------------+
+    ```
 
 # Frequently Asked Questions
 
--   After updating Linux kernel and system packages, it may shows the error:
+-   Often, you may encounter the following error when running `nvidia-smi`:
     ```
     $ nvidia-smi
     NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver. Make sure that the latest NVIDIA driver is installed and running.
     ```
-    The solution is to reinstall NVIDIA driver and CUDA Toolkit.
+    
+    This issue can arise for various reasons. After researching and trying different
+    solutions, I found a blog
+    [post](https://medium.com/@yt.chen/nvidia-smi-%E9%80%A3%E4%B8%8D%E5%88%B0-driver-%E7%9A%84%E8%87%AA%E6%95%91%E6%96%B9%E6%B3%95-69cbed16171d)
+    that provides a viable solution. Here is asummarized version of the steps:
+
+
+    - 1. Run the following command to find the previously installed NVIDIA driver version:
+
+    ```shell
+    $ ls /usr/src | grep nvidia
+    nvidia-535.171.04
+    ```
+
+    - 2. Install `dkms` (if not already installed):
+
+    ```shell
+    sudo apt install dkms
+    ```
+
+    - 3. Use `dkms` to install the detected driver version:
+
+    ```
+    sudo dkms install -m nvidia -v 535.171.04
+    ```
