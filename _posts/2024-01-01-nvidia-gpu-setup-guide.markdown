@@ -218,11 +218,17 @@ machine (Ubuntu 22.04) hosted on GCE. Please carefully follow the steps below:
     ```
 
     If you encounter any errors or failures during installation, please refer to this
-    [installation function](https://github.com/GoogleCloudPlatform/compute-gpu-installation/blob/7d1f09e414be69ece62a8024d42eba7cf90752f5/linux/install_gpu_driver.py#L365).
+    [installation function
+    (`compute-gpu-installation/linux/install_gpu_driver.py:install_driver_runfile`)](https://github.com/GoogleCloudPlatform/compute-gpu-installation/blob/7d1f09e414be69ece62a8024d42eba7cf90752f5/linux/install_gpu_driver.py#L365).
     You may find salvation in it.
 
-    After successfully installing the NVIDIA driver, the next step is to install the
-    CUDA Toolkit.
+    Once the NVIDIA driver is successfully installed, the next step might
+    involve installing the CUDA Toolkit. However, it may not be necessary to
+    install CUDA at the system level. Many modern frameworks, such as PyTorch,
+    bundle the required CUDA libraries within their installation packages. I
+    recommend first attempting to install PyTorch in a virtual environment and
+    verifying GPU detection. If PyTorch can recognize your GPUs, a separate
+    system-wide CUDA Toolkit installation is likely unnecessary.
 
 ## Installing CUDA Toolkit
 
