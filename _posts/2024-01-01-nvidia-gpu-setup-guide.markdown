@@ -431,8 +431,8 @@ Now, you want to install CUDA Toolkit 11.8 alongside it.
     ```
 
 References:
-- https://stackoverflow.com/questions/41330798/install-multiple-versions-of-cuda-and-cudnn
-- https://blog.kovalevskyi.com/multiple-version-of-cuda-libraries-on-the-same-machine-b9502d50ae77
+- [Stack Overflow: Install multiple versions of CUDA and cuDNN](https://stackoverflow.com/questions/41330798/install-multiple-versions-of-cuda-and-cudnn)
+- [Multiple versions of CUDA libraries on the same machine](https://blog.kovalevskyi.com/multiple-version-of-cuda-libraries-on-the-same-machine-b9502d50ae77)
 
 
 ## Installing cuDNN
