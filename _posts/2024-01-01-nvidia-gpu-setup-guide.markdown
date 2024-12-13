@@ -383,6 +383,58 @@ sudo apt-get install cuda-toolkit
 sudo apt-get install nvidia-cuda-toolkit
 ```
 
+
+## Installing Multiple Versions of the CUDA Toolkit
+
+This section walks through installing and switching between multiple versions.
+The key strategy is to install each version in its unique system path and
+configure your environment variables to use the desired version during
+development.
+
+Suppose your system already has CUDA Toolkit 12.1 installed, with the following
+setup:
+
+```
+/usr/local/cuda-12.1/
+/usr/local/cuda -> /usr/local/cuda-12.1/
+```
+
+Now, you want to install CUDA Toolkit 11.8 alongside it.
+
+1. Download CUDA Toolkit 11.8:
+
+    `wget https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_520.61.05_linux.run`
+
+2. Run the installer but ensure that **ONLY** the **CUDA Toolkit** is installed (**NOT** the **NVIDIA Driver**). Specify a different path to avoid overwriting the existing installation:
+
+    `sudo sh cuda_11.8.0_520.61.05_linux.run --toolkitpath=/usr/local/cuda-11.8`
+
+    Note: During installation, you might encounter errors related to
+    incompatible versions of `gcc` and `g++`. If so, install the correct
+    versions and prioritize them.
+
+3. Update the Symlink
+
+    To switch between CUDA versions, update the symlink by pointing
+    `/usr/local/cuda` to the desired version:
+
+    `sudo ln -sfn /usr/local/cuda-11.8 /usr/local/cuda`
+
+4. Configure Environment Variables
+
+    Whenever you need to work with CUDA 11.8, set your environment variables
+    accordingly:
+
+    ```
+    export PATH=/usr/local/cuda-11.8/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/local/cuda-11.8/lib64:$LD_LIBRARY_PATH
+    ```
+
+References:
+- https://stackoverflow.com/questions/41330798/install-multiple-versions-of-cuda-and-cudnn
+- https://blog.kovalevskyi.com/multiple-version-of-cuda-libraries-on-the-same-machine-b9502d50ae77
+
+
 ## Installing cuDNN
 
 Here are the links that can be helpful for installing cuDNN:
